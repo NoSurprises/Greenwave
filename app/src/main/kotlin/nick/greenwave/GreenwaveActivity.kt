@@ -20,17 +20,19 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.tasks.Task
 import utils.*
 
+val DEBUG = true
 
 class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView {
     private val provider: GreenwaveProviderApi = GreenwaveProvider(this)
 
     private val TAG = "GreenwaveActivity"
-    private val DEBUG = true
     private var locationCallback: LocationCallback? = null
     private val fusedLocationClient by lazy { LocationServices.getFusedLocationProviderClient(this) }
 
     private val lonView by lazy { findViewById<TextView>(R.id.lon) }
     private val latView by lazy { findViewById<TextView>(R.id.lat) }
+    private val speedView by lazy { findViewById<TextView>(R.id.current_speed) }
+    private val speedHistoryView by lazy { findViewById<TextView>(R.id.current_speed_history) }
     private var map: GoogleMap? = null
     private var mCameraPosition: CameraPosition? = null
 
@@ -188,4 +190,11 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         }
     }
 
+
+    override fun setCurrentSpeed(speed: Double, history: Boolean) {
+        if (history)
+            speedHistoryView.text = speed.toString()
+        else
+            speedView.text = speed.toString()
+    }
 }

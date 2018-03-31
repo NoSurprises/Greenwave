@@ -1,3 +1,8 @@
 package nick.greenwave
 
-interface GreenwaveModelApi {}
+
+interface GreenwaveModelApi {
+    fun startTrackingSpeed()
+    fun stopTrackingSpeed()
+
+}
