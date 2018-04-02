@@ -11,9 +11,7 @@ import nick.greenwave.receiver.SpeedListener
 import utils.ALL_MEAN_SPEED_MEASURMENT
 import utils.LAST_2_SPEED_MEASURMENT
 import utils.PreviousLocations
-import utils.SPEED_UPDATE_INTERVAL
 import java.util.*
-import kotlin.concurrent.schedule
 
 
 class GreenwaveModel(val provider: GreenwaveProviderApi) : GreenwaveModelApi, SpeedListener {
@@ -32,11 +30,11 @@ class GreenwaveModel(val provider: GreenwaveProviderApi) : GreenwaveModelApi, Sp
     override fun startTrackingSpeed() {
         context = provider.getApplicationContext()
 
-        setTimerToMeasureSpeed()
+//        setTimerToMeasureSpeed() // todo testing with default speed, remove this if default works
     }
 
     private fun setTimerToMeasureSpeed() {
-        timer.schedule(SPEED_UPDATE_INTERVAL) { timeToMeasureSpeed() }
+//        timer.schedule(SPEED_UPDATE_INTERVAL) { timeToMeasureSpeed() }
     }
 
 
@@ -49,15 +47,17 @@ class GreenwaveModel(val provider: GreenwaveProviderApi) : GreenwaveModelApi, Sp
     }
 
     override fun stopTrackingSpeed() {
-        timer.cancel()
+//        timer.cancel()
     }
 
     private fun calculateSpeed(location: Location) {
-        if (DEBUG) Log.d(TAG, "(63, GreenwaveModel.kt) calculateSpeed")
+        if (DEBUG) Log.d(TAG, "(63, GreenwaveModel.kt) calculateSpeed, locations: ${lastLocations.getLastLocations()}")
         lastLocations.addLocation(location)
         provider.onSpeedChanged(lastLocations.calculateLastMeanDistance(), LAST_2_SPEED_MEASURMENT)
         provider.onSpeedChanged(lastLocations.calculateMeanHistoryDistance(), ALL_MEAN_SPEED_MEASURMENT)
 
     }
+
+
 }
 

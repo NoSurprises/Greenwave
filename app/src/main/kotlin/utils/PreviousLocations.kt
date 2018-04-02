@@ -23,4 +23,8 @@ class PreviousLocations {
 
         return -2.0
     }
+
+    fun getLastLocations(): List<Location> {
+        return locations;
+    }
 }

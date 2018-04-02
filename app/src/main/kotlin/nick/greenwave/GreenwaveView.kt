@@ -2,6 +2,8 @@ package nick.greenwave
 
 import android.content.Context
 import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import nick.greenwave.dto.Light
 
 interface GreenwaveView {
     var cameraPosition: CameraPosition?
@@ -26,5 +28,9 @@ interface GreenwaveView {
     fun getApplicationContext(): Context
 
     fun setCurrentSpeed(speed: Double, history: Boolean = false)
+
+    fun addMark(latLng: LatLng)
+
+    fun startSettingsActivy(lightInfo: Light)
 
 }

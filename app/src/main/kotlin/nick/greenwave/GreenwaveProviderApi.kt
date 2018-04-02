@@ -4,6 +4,8 @@ import android.content.Context
 
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 
 interface GreenwaveProviderApi {
 
@@ -20,6 +22,10 @@ interface GreenwaveProviderApi {
     fun onSpeedChanged(newSpeed: Double, variant: Int)
 
     fun getApplicationContext(): Context
+
+    fun addMapMark(latLng: LatLng)
+
+    fun openLightSettings(marker: Marker)
 
 
 }

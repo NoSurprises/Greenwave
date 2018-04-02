@@ -2,6 +2,7 @@ package nick.greenwave
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
@@ -17,7 +18,11 @@ import com.google.android.gms.maps.MapFragment
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.Task
+import nick.greenwave.dto.Light
+import nick.greenwave.settings.SettingsActivity
 import utils.*
 
 val DEBUG = true
@@ -28,6 +33,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
     private val TAG = "GreenwaveActivity"
     private var locationCallback: LocationCallback? = null
     private val fusedLocationClient by lazy { LocationServices.getFusedLocationProviderClient(this) }
+
 
     private val lonView by lazy { findViewById<TextView>(R.id.lon) }
     private val latView by lazy { findViewById<TextView>(R.id.lat) }
@@ -61,6 +67,9 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
     override fun onMapReady(map: GoogleMap?) {
         if (DEBUG) Log.d(TAG, "(53, GreenwaveActivity.kt) onMapReady $map")
         this.map = map
+
+        map?.setOnMapLongClickListener { provider.addMapMark(it) }
+
         provider.onMapReady(map)
     }
 
@@ -111,6 +120,25 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         if (DEBUG) Log.d(TAG, "(96, GreenwaveActivity.kt) unregisterLocationUpdate")
         locationCallback ?: return
         fusedLocationClient.removeLocationUpdates(locationCallback)
+    }
+
+    override fun addMark(latLng: LatLng) {
+        val markOptions = MarkerOptions()
+                .position(latLng)
+                .title("Light")
+                .snippet("${latLng.latitude} ${latLng.longitude}")
+
+
+        map?.addMarker(markOptions)
+        map?.setOnMarkerClickListener { openLightPopup(it) }
+        map?.setOnInfoWindowClickListener { provider.openLightSettings(it) }
+
+    }
+
+    private fun openLightPopup(marker: Marker): Boolean {
+        marker.showInfoWindow()
+
+        return true
     }
 
     override fun setLon(lon: Double) {
@@ -196,5 +224,11 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
             speedHistoryView.text = speed.toString()
         else
             speedView.text = speed.toString()
+    }
+
+    override fun startSettingsActivy(lightInfo: Light) {
+        val intent = Intent(this, SettingsActivity::class.java)
+        intent.putExtra(EXTRAS_LIGHT_INFO, lightInfo)
+        startActivity(intent)
     }
 }
