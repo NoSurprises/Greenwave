@@ -22,6 +22,6 @@ val EXTRAS_LIGHT_INFO = "extras_light_info"
 val OVERPASS_QUERY_DELIMETER = "%bounds%"
 val OVERPASS_QUERY = "[out:json];(node[crossing=traffic_signals]$OVERPASS_QUERY_DELIMETER);out body center qt 100;"
 
-val NEAREST_LIGHTS_MARGIN = 0.001f
+val NEAREST_LIGHTS_MARGIN = 0.01f // approximately 1.5 km
 
 

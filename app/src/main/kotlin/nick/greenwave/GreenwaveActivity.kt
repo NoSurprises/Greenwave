@@ -52,7 +52,8 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         }
 
     private val locationUpdateRequest by lazy {
-        LocationRequest.create().setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+        LocationRequest.create()
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setInterval(LOCATION_UPDATE_INTERVAL)
     }
 

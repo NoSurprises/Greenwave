@@ -90,7 +90,8 @@ class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
 
     override fun onReceiveNearestLights(lights: List<TrafficLight>) {
         for (i in lights) {
-            view.addMark(LatLng(i.lat, i.lon))
+            if (DEBUG) Log.d(TAG, "(93, GreenwaveProvider.kt) nearest: $i/.jk")
+            view.addMark(LatLng(i.lat, i.lng))
         }
     }
 

@@ -99,7 +99,7 @@ class GreenwaveModel(val provider: GreenwaveProviderApi) : GreenwaveModelApi, Sp
 
         val lights = ArrayList<TrafficLight>()
         for (element in result.elements) {
-            lights.add(TrafficLight(element.lon, element.lon))
+            lights.add(TrafficLight(element.lat, element.lon))
         }
         provider.onReceiveNearestLights(lights)
     }
