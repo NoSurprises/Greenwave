@@ -18,3 +18,10 @@ val LAST_2_SPEED_MEASURMENT = 11
 val ALL_MEAN_SPEED_MEASURMENT = 23
 
 val EXTRAS_LIGHT_INFO = "extras_light_info"
+
+val OVERPASS_QUERY_DELIMETER = "%bounds%"
+val OVERPASS_QUERY = "[out:json];(node[crossing=traffic_signals]$OVERPASS_QUERY_DELIMETER);out body center qt 100;"
+
+val NEAREST_LIGHTS_MARGIN = 0.001f
+
+

@@ -10,6 +10,7 @@ import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import android.widget.Button
 import android.widget.TextView
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -21,7 +22,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.Task
-import nick.greenwave.dto.Light
+import nick.greenwave.data.dto.LightSettings
 import nick.greenwave.settings.SettingsActivity
 import utils.*
 
@@ -37,6 +38,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
 
     private val lonView by lazy { findViewById<TextView>(R.id.lon) }
     private val latView by lazy { findViewById<TextView>(R.id.lat) }
+    private val requestNearestLights by lazy { findViewById<Button>(R.id.request_nearest) }
     private val speedView by lazy { findViewById<TextView>(R.id.current_speed) }
     private val speedHistoryView by lazy { findViewById<TextView>(R.id.current_speed_history) }
     private var map: GoogleMap? = null
@@ -60,6 +62,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         setContentView(R.layout.greenwave)
 
         if (DEBUG) Log.d(TAG, "onCreate: ")
+        requestNearestLights.setOnClickListener { getDeviceLocation()?.addOnSuccessListener { provider.requestNearestLights(it) } }
         val mapFragment = fragmentManager.findFragmentById(R.id.map) as MapFragment
         mapFragment.getMapAsync(this)
     }
@@ -125,7 +128,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
     override fun addMark(latLng: LatLng) {
         val markOptions = MarkerOptions()
                 .position(latLng)
-                .title("Light")
+                .title("LightSettings")
                 .snippet("${latLng.latitude} ${latLng.longitude}")
 
 
@@ -186,7 +189,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         }
     }
 
-    private fun registerForActivityRecognition() {
+    private fun registerActivityRecognition() {
         val transitions = ArrayList<ActivityTransition>()
 
         transitions.add(
@@ -226,9 +229,9 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
             speedView.text = speed.toString()
     }
 
-    override fun startSettingsActivy(lightInfo: Light) {
+    override fun startSettingsActivy(lightSettingsInfo: LightSettings) {
         val intent = Intent(this, SettingsActivity::class.java)
-        intent.putExtra(EXTRAS_LIGHT_INFO, lightInfo)
+        intent.putExtra(EXTRAS_LIGHT_INFO, lightSettingsInfo)
         startActivity(intent)
     }
 }

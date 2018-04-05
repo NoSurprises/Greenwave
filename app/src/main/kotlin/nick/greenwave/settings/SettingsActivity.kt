@@ -10,7 +10,7 @@ import android.view.MenuItem
 import android.widget.EditText
 import nick.greenwave.DEBUG
 import nick.greenwave.R
-import nick.greenwave.dto.Light
+import nick.greenwave.data.dto.LightSettings
 import utils.EXTRAS_LIGHT_INFO
 
 class SettingsActivity : AppCompatActivity(), SettingsView {
@@ -32,10 +32,10 @@ class SettingsActivity : AppCompatActivity(), SettingsView {
             showErrorDialog()
             return
         }
-        val lightInfo: Light = extras.getParcelable(EXTRAS_LIGHT_INFO)
+        val lightSettingsInfo: LightSettings = extras.getParcelable(EXTRAS_LIGHT_INFO)
 
-        setGreenCycle(lightInfo.greenCycle)
-        setRedCycle(lightInfo.redCycle)
+        setGreenCycle(lightSettingsInfo.greenCycle)
+        setRedCycle(lightSettingsInfo.redCycle)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {

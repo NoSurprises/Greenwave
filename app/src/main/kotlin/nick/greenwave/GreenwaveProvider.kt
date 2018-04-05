@@ -1,25 +1,22 @@
 package nick.greenwave
 
 import android.content.Context
+import android.location.Location
 import android.util.Log
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
-import nick.greenwave.dto.Light
+import nick.greenwave.data.TrafficLight
+import nick.greenwave.data.dto.LightSettings
 import utils.ALL_MEAN_SPEED_MEASURMENT
 import utils.LAST_2_SPEED_MEASURMENT
-import utils.OsmService
 
 class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
 
-    val osmService by lazy {
-        OsmService.create()
-    }
+
     val model: GreenwaveModelApi = GreenwaveModel(this)
     var disposable: Disposable? = null
 
@@ -83,32 +80,25 @@ class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
         if (DEBUG) Log.d(TAG, "(73, GreenwaveProvider.kt) addMapMark: latlng=$latLng")
         // todo save in model
         view.addMark(latLng)
-
-
-        val bounds = "(55.79,37.52,55.81,37.55)"
-        val query = "[out:json];(node[crossing=traffic_signals]$bounds);out body center qt 100;"
-
-        if (DEBUG) Log.d(TAG, "(92, GreenwaveProvider.kt) addMapMark: $query")
-        osmService.fetchChunkData(query)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        { result ->
-                            Log.d(TAG, "result = ${result.elements}")
-                        },
-                        { error ->
-                            Log.d(TAG, "error: $error")
-                        }
-                )
-
-
-
     }
 
     override fun openLightSettings(marker: Marker) {
         if (DEBUG) Log.d(TAG, "(80, GreenwaveProvider.kt) openLightSettings for ${marker.snippet}")
-        // todo get data from model
-
-        view.startSettingsActivy(Light(0, 0, 22))
+        // todo get data from model, maybe bound TrafficLight object in adapter of the card
+        view.startSettingsActivy(LightSettings(0, 0, 22))
     }
+
+    override fun onReceiveNearestLights(lights: List<TrafficLight>) {
+        for (i in lights) {
+            view.addMark(LatLng(i.lat, i.lon))
+        }
+    }
+
+    override fun requestNearestLights(location: Location) {
+        if (DEBUG) Log.d(TAG, "(99, GreenwaveProvider.kt) requestNearestLights for $location")
+        model.requestNearestLights(location.latitude.toFloat(), location.longitude.toFloat())
+
+
+    }
+
 }

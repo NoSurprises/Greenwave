@@ -25,6 +25,6 @@ class PreviousLocations {
     }
 
     fun getLastLocations(): List<Location> {
-        return locations;
+        return locations
     }
 }

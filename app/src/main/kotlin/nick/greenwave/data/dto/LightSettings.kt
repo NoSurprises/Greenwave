@@ -1,11 +1,11 @@
-package nick.greenwave.dto
+package nick.greenwave.data.dto
 
 import android.os.Parcel
 import android.os.Parcelable
 
-data class Light(var greenCycle: Int,
-                 var redCycle: Int,
-                 var startOfMeasurement: Long) : Parcelable {
+data class LightSettings(var greenCycle: Int = 0,
+                         var redCycle: Int = 0,
+                         var startOfMeasurement: Long = 0L) : Parcelable {
 
 
     constructor(parcel: Parcel) : this(
@@ -23,12 +23,12 @@ data class Light(var greenCycle: Int,
         p0?.writeLong(startOfMeasurement)
     }
 
-    companion object CREATOR : Parcelable.Creator<Light> {
-        override fun createFromParcel(parcel: Parcel): Light {
-            return Light(parcel)
+    companion object CREATOR : Parcelable.Creator<LightSettings> {
+        override fun createFromParcel(parcel: Parcel): LightSettings {
+            return LightSettings(parcel)
         }
 
-        override fun newArray(size: Int): Array<Light?> {
+        override fun newArray(size: Int): Array<LightSettings?> {
             return arrayOfNulls(size)
         }
     }
