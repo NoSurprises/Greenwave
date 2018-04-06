@@ -19,9 +19,9 @@ interface GreenwaveProviderApi {
 
     fun onResume()
 
-    fun onLocationUpdate(location: LocationResult?)
+    fun onLocationUpdate(location: LocationResult)
 
-    fun onSpeedChanged(newSpeed: Double, variant: Int)
+    fun onSpeedChanged(newSpeed: Double)
 
     fun getApplicationContext(): Context
 
@@ -29,7 +29,7 @@ interface GreenwaveProviderApi {
 
     fun openLightSettings(marker: Marker)
     fun onReceiveNearestLights(lights: List<TrafficLight>)
-    fun requestNearestLights(it: Location)
-
+    fun requestNearestLights(location: Location)
+    fun onCameraMoved()
 
 }

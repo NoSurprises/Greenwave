@@ -17,10 +17,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapFragment
 import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 import com.google.android.gms.tasks.Task
 import nick.greenwave.data.dto.LightSettings
 import nick.greenwave.settings.SettingsActivity
@@ -43,7 +40,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
     private val speedHistoryView by lazy { findViewById<TextView>(R.id.current_speed_history) }
     private var map: GoogleMap? = null
     private var mCameraPosition: CameraPosition? = null
-
+    private val markers = ArrayList<Marker?>()
 
     override var cameraPosition: CameraPosition?
         get() = mCameraPosition
@@ -55,6 +52,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setInterval(LOCATION_UPDATE_INTERVAL)
+                .setFastestInterval(SECOND_IN_MILLIS)
     }
 
 
@@ -73,8 +71,41 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         this.map = map
 
         map?.setOnMapLongClickListener { provider.addMapMark(it) }
+        map?.setOnCameraMoveStartedListener {
+            provider.onCameraMoved()
+        }
 
         provider.onMapReady(map)
+
+    }
+
+    override fun setActiveColorMarker(latLng: LatLng) {
+        if (markers.isEmpty()) {
+            return
+        }
+        var current: Marker? = null
+        for (i in markers) {
+            current = i
+            if (current?.position?.equals(latLng)!!)
+                break
+        }
+        current?.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
+    }
+
+    private fun isApproximatelyTheSameLight(latLng: LatLng, marker: Marker): Boolean {
+        return (Math.abs(latLng.latitude - marker.position.latitude) < MARKER_EPSILON &&
+                Math.abs(latLng.longitude - marker.position.longitude) < MARKER_EPSILON)
+    }
+
+    override fun resetMarkersColors() {
+        for (i in markers) {
+            i?.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
+        }
+    }
+
+    override fun removeAllMarks() {
+        markers.forEach { it?.remove() }
+        markers.clear()
     }
 
     override fun requestLocationPermissions() {
@@ -133,7 +164,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
                 .snippet("${latLng.latitude} ${latLng.longitude}")
 
 
-        map?.addMarker(markOptions)
+        markers.add(map?.addMarker(markOptions))
         map?.setOnMarkerClickListener { openLightPopup(it) }
         map?.setOnInfoWindowClickListener { provider.openLightSettings(it) }
 
@@ -217,17 +248,14 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
                 if (DEBUG) Log.d(TAG, "locations: ${loc?.locations}")
                 if (DEBUG) Log.d(TAG, "lastLocation: ${loc?.lastLocation}")
 
-                provider.onLocationUpdate(loc)
+                loc?.let { provider.onLocationUpdate(loc) }
             }
         }
     }
 
 
-    override fun setCurrentSpeed(speed: Double, history: Boolean) {
-        if (history)
-            speedHistoryView.text = speed.toString()
-        else
-            speedView.text = speed.toString()
+    override fun setCurrentSpeed(speed: Double) {
+        speedView.text = String.format("%.2f", speed)
     }
 
     override fun startSettingsActivy(lightSettingsInfo: LightSettings) {

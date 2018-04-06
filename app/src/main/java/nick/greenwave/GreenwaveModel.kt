@@ -1,66 +1,24 @@
 package nick.greenwave
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import android.util.Log
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.model.LatLng
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import nick.greenwave.data.TrafficLight
-import nick.greenwave.receiver.SpeedListener
 import utils.*
 import java.util.*
 
 
-class GreenwaveModel(val provider: GreenwaveProviderApi) : GreenwaveModelApi, SpeedListener {
+class GreenwaveModel(val provider: GreenwaveProviderApi) : GreenwaveModelApi {
 
-    val lastLocations = PreviousLocations()
     var context: Context? = null
     private val TAG = "GreenwaveModel"
     private val timer = Timer("SpeedMeasurement")
-
+    private var nearestLights: List<TrafficLight>? = null
     val osmService
             by lazy { OsmService.create() }
-    val locationClient: FusedLocationProviderClient
-            by lazy { LocationServices.getFusedLocationProviderClient(context!!) }
-    val locationRequest: LocationRequest
-            by lazy { LocationRequest.create().setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY) }
-
-
-    override fun startTrackingSpeed() {
-        context = provider.getApplicationContext()
-
-//        setTimerToMeasureSpeed() // todo testing with default speed, remove this if default works
-    }
-
-    private fun setTimerToMeasureSpeed() {
-//        timer.schedule(SPEED_UPDATE_INTERVAL) { timeToMeasureSpeed() }
-    }
-
-
-    @SuppressLint("MissingPermission")
-    override fun timeToMeasureSpeed() {
-        if (DEBUG) Log.d(TAG, "(38, GreenwaveModel.kt) timeToMeasureSpeed ")
-
-        context?.let { locationClient.lastLocation.addOnSuccessListener { calculateSpeed(it) } }
-        setTimerToMeasureSpeed()
-    }
-
-    override fun stopTrackingSpeed() {
-//        timer.cancel()
-    }
-
-    private fun calculateSpeed(location: Location) {
-        if (DEBUG) Log.d(TAG, "(63, GreenwaveModel.kt) calculateSpeed, locations: ${lastLocations.getLastLocations()}")
-        lastLocations.addLocation(location)
-        provider.onSpeedChanged(lastLocations.calculateLastMeanDistance(), LAST_2_SPEED_MEASURMENT)
-        provider.onSpeedChanged(lastLocations.calculateMeanHistoryDistance(), ALL_MEAN_SPEED_MEASURMENT)
-
-    }
-
 
     override fun requestNearestLights(lat: Float, lng: Float) {
         // TODO: 4/5/2018 get lights from db, key is a composition of lon and lat
@@ -97,13 +55,54 @@ class GreenwaveModel(val provider: GreenwaveProviderApi) : GreenwaveModelApi, Sp
             // TODO: 4/5/2018 save in database
         }
 
+        nearestLights = null
         val lights = ArrayList<TrafficLight>()
         for (element in result.elements) {
             lights.add(TrafficLight(element.lat, element.lon))
         }
+        nearestLights = lights
         provider.onReceiveNearestLights(lights)
     }
 
+    override fun getNearestLight(location: Location): TrafficLight? {
+        if (DEBUG) Log.d(TAG, "(74, GreenwaveModel.kt) nearestLights: $nearestLights")
+        nearestLights ?: return null
 
+        val latLng = LatLng(location.latitude, location.longitude)
+        val movementVector = Pair(Math.cos(location.bearing.toDouble()), Math.sin(location.bearing.toDouble()))
+
+        val closest = nearestLights!!
+                .filter { isLightCloserThan(it, NEAREST_LIGHT_DISTANCE, latLng) }
+                .filter { isLightInFront(it, latLng, movementVector) }
+                .sortedBy { getDistance(latLng, LatLng(it.lat, it.lng)) }
+
+        if (DEBUG) Log.d(TAG, "(79, GreenwaveModel.kt) nearest lights: $closest")
+
+        if (closest.isNotEmpty()) {
+            return closest.first()
+        }
+        return null
+    }
+
+    private fun getDistance(from: LatLng, to: LatLng): Double {
+        return Math.sqrt(
+                Math.pow(from.latitude - to.latitude, 2.0) +
+                        Math.pow(from.longitude - to.longitude, 2.0))
+    }
+
+    private fun isLightInFront(light: TrafficLight, position: LatLng, movementVector: Pair<Double, Double>): Boolean {
+        val lightVector = Pair(light.lat - position.latitude, light.lng - position.longitude)
+        val cos = movementVector.scalar(lightVector)
+        return cos > 0
+    }
+
+    private fun isLightCloserThan(light: TrafficLight, distance: Double, position: LatLng): Boolean {
+        return getDistance(position, LatLng(light.lat, light.lng)) < distance
+    }
+
+}
+
+private fun Pair<Double, Double>.scalar(vector: Pair<Double, Double>): Double {
+    return this.first * vector.first + this.second * vector.second
 }
 

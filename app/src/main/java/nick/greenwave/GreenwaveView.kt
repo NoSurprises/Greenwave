@@ -26,11 +26,12 @@ interface GreenwaveView {
     fun setLat(lat: Double)
 
     fun getApplicationContext(): Context
-
-    fun setCurrentSpeed(speed: Double, history: Boolean = false)
-
     fun addMark(latLng: LatLng)
 
     fun startSettingsActivy(lightSettingsInfo: LightSettings)
+    fun setCurrentSpeed(speed: Double)
+    fun setActiveColorMarker(latLng: LatLng)
+    fun resetMarkersColors()
+    fun removeAllMarks()
 
 }

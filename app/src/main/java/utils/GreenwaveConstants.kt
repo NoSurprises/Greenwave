@@ -3,7 +3,10 @@ package utils
 import android.Manifest
 import com.google.android.gms.maps.model.LatLng
 
-const val STANDARD_ZOOM = 18f
+const val SECOND_IN_MILLIS = 1000L
+const val MINUNE_IN_MILLIS = SECOND_IN_MILLIS * 60
+
+const val STANDARD_ZOOM = 13f
 const val MEDIUM_ZOOM = 10f
 const val STANDARD_TILT = 50f
 val STANDARD_LOCATION = LatLng(55.7604523, 37.5772471)
@@ -22,6 +25,7 @@ val EXTRAS_LIGHT_INFO = "extras_light_info"
 val OVERPASS_QUERY_DELIMETER = "%bounds%"
 val OVERPASS_QUERY = "[out:json];(node[crossing=traffic_signals]$OVERPASS_QUERY_DELIMETER);out body center qt 100;"
 
-val NEAREST_LIGHTS_MARGIN = 0.01f // approximately 1.5 km
-
+val NEAREST_LIGHTS_MARGIN = 0.01f // ~1.5 km
+val NEAREST_LIGHT_DISTANCE = 0.01 // 0.001~150m
+val MARKER_EPSILON = 0.00003f
 

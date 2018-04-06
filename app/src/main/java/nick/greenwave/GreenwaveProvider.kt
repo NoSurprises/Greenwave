@@ -11,14 +11,15 @@ import com.google.android.gms.maps.model.Marker
 import io.reactivex.disposables.Disposable
 import nick.greenwave.data.TrafficLight
 import nick.greenwave.data.dto.LightSettings
-import utils.ALL_MEAN_SPEED_MEASURMENT
-import utils.LAST_2_SPEED_MEASURMENT
+import utils.CameraMovementLogicHelper
 
 class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
 
 
     val model: GreenwaveModelApi = GreenwaveModel(this)
     var disposable: Disposable? = null
+    private val movementHelper = CameraMovementLogicHelper()
+    private var needUpdateNearestLight = false
 
     private val TAG = "GreenwaveProvider"
     override fun onMapReady(map: GoogleMap?) {
@@ -34,33 +35,41 @@ class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
 
     override fun onPause() {
         view.unregisterLocationUpdate()
-        model.stopTrackingSpeed()
-
     }
 
     override fun onResume() {
         view.registerLocationUpdate()
-        model.startTrackingSpeed()
-
     }
 
-    override fun onLocationUpdate(location: LocationResult?) {
-        location ?: return
+    override fun onLocationUpdate(location: LocationResult) {
         val lastLoc = location.lastLocation
 
-        onSpeedChanged(lastLoc.speed.toDouble(), LAST_2_SPEED_MEASURMENT) // todo testing defalut api
+        onSpeedChanged(lastLoc.speed.toDouble()) // todo testing defalut api
 
-        val position = CameraPosition.builder(view.cameraPosition ?: view.defaultCameraSettings())
-                .target(LatLng(lastLoc.latitude, lastLoc.longitude))
-                .bearing(lastLoc.bearing)
-                .build()
-
-
-        view.moveCameraTo(position)
+        if (movementHelper.canMoveCamera()) {
+            val position = CameraPosition.builder(view.cameraPosition
+                    ?: view.defaultCameraSettings())
+                    .target(LatLng(lastLoc.latitude, lastLoc.longitude))
+                    .bearing(lastLoc.bearing)
+                    .build()
+            view.moveCameraTo(position)
+        }
 
         // todo remove debug
         view.setLat(lastLoc.latitude)
         view.setLon(lastLoc.longitude)
+
+        if (needUpdateNearestLight) {
+            val closest = model.getNearestLight(lastLoc)
+            needUpdateNearestLight = false // todo change to appropriate logic
+            if (DEBUG) Log.d(TAG, "(66, GreenwaveProvider.kt) changing color of $closest")
+            view.resetMarkersColors()
+            closest?.let { view.setActiveColorMarker(LatLng(closest.lat, closest.lng)) }
+        }
+    }
+
+    override fun onCameraMoved() {
+        movementHelper.startMovement()
     }
 
     override fun getApplicationContext(): Context {
@@ -69,11 +78,8 @@ class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
         return applicationContext
     }
 
-    override fun onSpeedChanged(newSpeed: Double, variant: Int) {
-        if (variant == LAST_2_SPEED_MEASURMENT)
-            view.setCurrentSpeed(newSpeed)
-        else if (variant == ALL_MEAN_SPEED_MEASURMENT)
-            view.setCurrentSpeed(newSpeed, true)
+    override fun onSpeedChanged(newSpeed: Double) {
+        view.setCurrentSpeed(newSpeed * 3.6) // convert from m/s to km/h
     }
 
     override fun addMapMark(latLng: LatLng) {
@@ -89,17 +95,22 @@ class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
     }
 
     override fun onReceiveNearestLights(lights: List<TrafficLight>) {
+        view.removeAllMarks()
         for (i in lights) {
             if (DEBUG) Log.d(TAG, "(93, GreenwaveProvider.kt) nearest: $i/.jk")
             view.addMark(LatLng(i.lat, i.lng))
         }
+
+        needUpdateNearestLight = true
+
     }
 
     override fun requestNearestLights(location: Location) {
         if (DEBUG) Log.d(TAG, "(99, GreenwaveProvider.kt) requestNearestLights for $location")
         model.requestNearestLights(location.latitude.toFloat(), location.longitude.toFloat())
 
-
     }
+
+
 
 }
