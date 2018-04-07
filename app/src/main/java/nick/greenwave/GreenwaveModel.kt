@@ -69,7 +69,9 @@ class GreenwaveModel(val provider: GreenwaveProviderApi) : GreenwaveModelApi {
         nearestLights ?: return null
 
         val latLng = LatLng(location.latitude, location.longitude)
-        val movementVector = Pair(Math.cos(location.bearing.toDouble()), Math.sin(location.bearing.toDouble()))
+        val movementVector = Pair(
+                Math.cos(degreeToRadian(location.bearing.toDouble())),
+                Math.sin(degreeToRadian(location.bearing.toDouble())))
 
         val closest = nearestLights!!
                 .filter { isLightCloserThan(it, NEAREST_LIGHT_DISTANCE, latLng) }
@@ -84,7 +86,11 @@ class GreenwaveModel(val provider: GreenwaveProviderApi) : GreenwaveModelApi {
         return null
     }
 
-    private fun getDistance(from: LatLng, to: LatLng): Double {
+    private fun degreeToRadian(deg: Double): Double {
+        return deg / 180.0 * Math.PI
+    }
+
+    private fun getDistance(from: LatLng, to: LatLng): Double { //todo replace with google api
         return Math.sqrt(
                 Math.pow(from.latitude - to.latitude, 2.0) +
                         Math.pow(from.longitude - to.longitude, 2.0))
