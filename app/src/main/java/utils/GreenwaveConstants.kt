@@ -26,6 +26,8 @@ val OVERPASS_QUERY_DELIMETER = "%bounds%"
 val OVERPASS_QUERY = "[out:json];(node[crossing=traffic_signals]$OVERPASS_QUERY_DELIMETER);out body center qt 100;"
 
 val NEAREST_LIGHTS_MARGIN = 0.01f // ~1.5 km
-val NEAREST_LIGHT_DISTANCE = 0.01 // 0.001~150m
+val NEAREST_LIGHT_DISTANCE = 800.0 // m
 val MARKER_EPSILON = 0.00003f
+
+val NOTABLE_DISTANCE = 100.0 //m
 

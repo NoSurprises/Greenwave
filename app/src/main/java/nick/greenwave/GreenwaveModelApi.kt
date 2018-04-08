@@ -6,6 +6,7 @@ import nick.greenwave.data.TrafficLight
 
 interface GreenwaveModelApi {
     fun requestNearestLights(lat: Float, lng: Float)
-    fun getNearestLight(location: Location): TrafficLight?
+    fun getNearestLight(currentLocation: Location): TrafficLight?
+    fun detectNotableDistanceFromLastQueryLight(currentLocation: Location): Boolean
 
 }

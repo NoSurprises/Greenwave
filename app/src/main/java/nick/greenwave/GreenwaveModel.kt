@@ -19,6 +19,8 @@ class GreenwaveModel(val provider: GreenwaveProviderApi) : GreenwaveModelApi {
     private var nearestLights: List<TrafficLight>? = null
     val osmService
             by lazy { OsmService.create() }
+    private var lastQueryLightLocation: Location? = null
+
 
     override fun requestNearestLights(lat: Float, lng: Float) {
         // TODO: 4/5/2018 get lights from db, key is a composition of lon and lat
@@ -64,46 +66,52 @@ class GreenwaveModel(val provider: GreenwaveProviderApi) : GreenwaveModelApi {
         provider.onReceiveNearestLights(lights)
     }
 
-    override fun getNearestLight(location: Location): TrafficLight? {
-        if (DEBUG) Log.d(TAG, "(74, GreenwaveModel.kt) nearestLights: $nearestLights")
-        nearestLights ?: return null
 
-        val latLng = LatLng(location.latitude, location.longitude)
+    override fun getNearestLight(currentLocation: Location): TrafficLight? {
+        nearestLights ?: return null
+        lastQueryLightLocation = currentLocation
+
+        val latLng = LatLng(currentLocation.latitude, currentLocation.longitude)
         val movementVector = Pair(
-                Math.cos(degreeToRadian(location.bearing.toDouble())),
-                Math.sin(degreeToRadian(location.bearing.toDouble())))
+                Math.cos(degreeToRadian(currentLocation.bearing.toDouble())),
+                Math.sin(degreeToRadian(currentLocation.bearing.toDouble())))
 
         val closest = nearestLights!!
-                .filter { isLightCloserThan(it, NEAREST_LIGHT_DISTANCE, latLng) }
+                .filter { isLightCloserThan(it, NEAREST_LIGHT_DISTANCE, currentLocation) }
                 .filter { isLightInFront(it, latLng, movementVector) }
                 .sortedBy { getDistance(latLng, LatLng(it.lat, it.lng)) }
 
         if (DEBUG) Log.d(TAG, "(79, GreenwaveModel.kt) nearest lights: $closest")
 
-        if (closest.isNotEmpty()) {
+        if (closest.isNotEmpty())
             return closest.first()
-        }
+
         return null
+    }
+
+    override fun detectNotableDistanceFromLastQueryLight(currentLocation: Location): Boolean {
+        lastQueryLightLocation ?: return true
+        return lastQueryLightLocation?.distanceTo(currentLocation)!! > NOTABLE_DISTANCE
     }
 
     private fun degreeToRadian(deg: Double): Double {
         return deg / 180.0 * Math.PI
     }
 
-    private fun getDistance(from: LatLng, to: LatLng): Double { //todo replace with google api
+    private fun getDistance(from: LatLng, to: LatLng): Double {
         return Math.sqrt(
                 Math.pow(from.latitude - to.latitude, 2.0) +
                         Math.pow(from.longitude - to.longitude, 2.0))
     }
 
     private fun isLightInFront(light: TrafficLight, position: LatLng, movementVector: Pair<Double, Double>): Boolean {
-        val lightVector = Pair(light.lat - position.latitude, light.lng - position.longitude)
+        val lightVector = Pair(light.lng - position.longitude, light.lat - position.latitude)
         val cos = movementVector.scalar(lightVector)
         return cos > 0
     }
 
-    private fun isLightCloserThan(light: TrafficLight, distance: Double, position: LatLng): Boolean {
-        return getDistance(position, LatLng(light.lat, light.lng)) < distance
+    private fun isLightCloserThan(light: TrafficLight, distance: Double, location: Location): Boolean {
+        return location.distanceTo(light.location) < distance
     }
 
 }

@@ -59,10 +59,14 @@ class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
         view.setLat(lastLoc.latitude)
         view.setLon(lastLoc.longitude)
 
+        if (model.detectNotableDistanceFromLastQueryLight(lastLoc)) {
+            if (DEBUG) Log.d(TAG, "(63, GreenwaveProvider.kt) time to choose nearest light")
+            needUpdateNearestLight = true
+        }
+
         if (needUpdateNearestLight) {
+            needUpdateNearestLight = false
             val closest = model.getNearestLight(lastLoc)
-            needUpdateNearestLight = false // todo change to appropriate logic
-            if (DEBUG) Log.d(TAG, "(66, GreenwaveProvider.kt) changing color of $closest")
             view.resetMarkersColors()
             closest?.let { view.setActiveColorMarker(LatLng(closest.lat, closest.lng)) }
         }
@@ -83,7 +87,6 @@ class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
     }
 
     override fun addMapMark(latLng: LatLng) {
-        if (DEBUG) Log.d(TAG, "(73, GreenwaveProvider.kt) addMapMark: latlng=$latLng")
         // todo save in model
         view.addMark(latLng)
     }
@@ -97,18 +100,13 @@ class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
     override fun onReceiveNearestLights(lights: List<TrafficLight>) {
         view.removeAllMarks()
         for (i in lights) {
-            if (DEBUG) Log.d(TAG, "(93, GreenwaveProvider.kt) nearest: $i/.jk")
             view.addMark(LatLng(i.lat, i.lng))
         }
-
-        needUpdateNearestLight = true
-
     }
 
     override fun requestNearestLights(location: Location) {
         if (DEBUG) Log.d(TAG, "(99, GreenwaveProvider.kt) requestNearestLights for $location")
         model.requestNearestLights(location.latitude.toFloat(), location.longitude.toFloat())
-
     }
 
 
