@@ -37,7 +37,9 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
     private val latView by lazy { findViewById<TextView>(R.id.lat) }
     private val requestNearestLights by lazy { findViewById<Button>(R.id.request_nearest) }
     private val speedView by lazy { findViewById<TextView>(R.id.current_speed) }
-    private val speedHistoryView by lazy { findViewById<TextView>(R.id.current_speed_history) }
+    private val recommendedSpeed by lazy { findViewById<TextView>(R.id.recommended_speed) }
+    private val remainingDistance by lazy { findViewById<TextView>(R.id.distance_remaining) }
+    private val timeToGreen by lazy { findViewById<TextView>(R.id.time) }
     private var map: GoogleMap? = null
     private var mCameraPosition: CameraPosition? = null
     private val markers = ArrayList<Marker?>()
@@ -79,6 +81,14 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
 
     }
 
+    override fun setDistance(distance: Double) {
+        remainingDistance.text = distance.toInt().toString()
+    }
+
+    override fun setRecommendedSpeed(speed: Double) {
+        recommendedSpeed.text = String.format("%.2f", speed)
+    }
+
     override fun setActiveColorMarker(latLng: LatLng) {
         if (markers.isEmpty()) {
             return
@@ -92,15 +102,12 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         current?.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
     }
 
-    private fun isApproximatelyTheSameLight(latLng: LatLng, marker: Marker): Boolean {
-        return (Math.abs(latLng.latitude - marker.position.latitude) < MARKER_EPSILON &&
-                Math.abs(latLng.longitude - marker.position.longitude) < MARKER_EPSILON)
+    override fun setTimeToGreen(time: Int) {
+        timeToGreen.text = time.toString()
     }
 
     override fun resetMarkersColors() {
-        for (i in markers) {
-            i?.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
-        }
+        //todo remove
     }
 
     override fun removeAllMarks() {

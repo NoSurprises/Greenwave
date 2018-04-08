@@ -8,16 +8,16 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
-import io.reactivex.disposables.Disposable
 import nick.greenwave.data.TrafficLight
 import nick.greenwave.data.dto.LightSettings
 import utils.CameraMovementLogicHelper
 
 class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
 
+    private var lastLoc: Location = Location("")
+    private var lastSpeed: Double = 0.0
 
-    val model: GreenwaveModelApi = GreenwaveModel(this)
-    var disposable: Disposable? = null
+    private val model: GreenwaveModelApi = GreenwaveModel(this)
     private val movementHelper = CameraMovementLogicHelper()
     private var needUpdateNearestLight = false
 
@@ -42,7 +42,7 @@ class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
     }
 
     override fun onLocationUpdate(location: LocationResult) {
-        val lastLoc = location.lastLocation
+        lastLoc = location.lastLocation
 
         onSpeedChanged(lastLoc.speed.toDouble()) // todo testing defalut api
 
@@ -67,9 +67,23 @@ class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
         if (needUpdateNearestLight) {
             needUpdateNearestLight = false
             val closest = model.getNearestLight(lastLoc)
-            view.resetMarkersColors()
-            closest?.let { view.setActiveColorMarker(LatLng(closest.lat, closest.lng)) }
+            closest?.let { onReceiveOneClosestLight(closest) }
         }
+    }
+
+    private fun onReceiveOneClosestLight(light: TrafficLight) {
+        view.resetMarkersColors()
+        view.setActiveColorMarker(LatLng(light.lat, light.lng))
+
+        view.setDistance(light.location.distanceTo(lastLoc).toDouble())
+        var timeToGreen = 15//todo run timer to update time to green
+        view.setTimeToGreen(timeToGreen)
+
+        view.setRecommendedSpeed(calculateRecommendedSpeed(light.location.distanceTo(lastLoc), timeToGreen))
+    }
+
+    private fun calculateRecommendedSpeed(distance: Float, timeToGreen: Int): Double {
+        return distance / timeToGreen.toDouble()
     }
 
     override fun onCameraMoved() {
@@ -83,7 +97,8 @@ class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
     }
 
     override fun onSpeedChanged(newSpeed: Double) {
-        view.setCurrentSpeed(newSpeed * 3.6) // convert from m/s to km/h
+        lastSpeed = newSpeed * 3.6
+        view.setCurrentSpeed(lastSpeed) // convert from m/s to km/h
     }
 
     override fun addMapMark(latLng: LatLng) {

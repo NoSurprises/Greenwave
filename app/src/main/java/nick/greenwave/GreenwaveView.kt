@@ -33,5 +33,8 @@ interface GreenwaveView {
     fun setActiveColorMarker(latLng: LatLng)
     fun resetMarkersColors()
     fun removeAllMarks()
+    fun setDistance(distance: Double)
+    fun setRecommendedSpeed(speed: Double)
+    fun setTimeToGreen(time: Int)
 
 }
