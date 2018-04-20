@@ -16,7 +16,7 @@ class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
 
     private var lastLoc: Location = Location("")
     private var lastSpeed: Double = 0.0
-
+las
     private val model: GreenwaveModelApi = GreenwaveModel(this)
     private val movementHelper = CameraMovementLogicHelper()
     private var needUpdateNearestLight = false
@@ -47,23 +47,36 @@ class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
         onSpeedChanged(lastLoc.speed.toDouble()) // todo testing defalut api
 
         if (movementHelper.canMoveCamera()) {
-            val position = CameraPosition.builder(view.cameraPosition
-                    ?: view.defaultCameraSettings())
-                    .target(LatLng(lastLoc.latitude, lastLoc.longitude))
-                    .bearing(lastLoc.bearing)
-                    .build()
-            view.moveCameraTo(position)
+            moveCameraToLastLocation()
         }
 
         // todo remove debug
         view.setLat(lastLoc.latitude)
         view.setLon(lastLoc.longitude)
 
+        updateDistanceToClosestLight()
+        // todo updateSpeedToClosestLight
+        detectTimeToUpdateClosestLight()
+        updateClosestLightIfNeeded()
+    }
+
+    private fun moveCameraToLastLocation() {
+        val position = CameraPosition.builder(view.cameraPosition
+                ?: view.defaultCameraSettings())
+                .target(LatLng(lastLoc.latitude, lastLoc.longitude))
+                .bearing(lastLoc.bearing)
+                .build()
+        view.moveCameraTo(position)
+    }
+
+    private fun detectTimeToUpdateClosestLight() {
         if (model.detectNotableDistanceFromLastQueryLight(lastLoc)) {
             if (DEBUG) Log.d(TAG, "(63, GreenwaveProvider.kt) time to choose nearest light")
             needUpdateNearestLight = true
         }
+    }
 
+    private fun updateClosestLightIfNeeded() {
         if (needUpdateNearestLight) {
             needUpdateNearestLight = false
             val closest = model.getNearestLight(lastLoc)
@@ -71,15 +84,24 @@ class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
         }
     }
 
+    private fun updateDistanceToClosestLight() {
+        val closestLight = model.getValidClosestLight(lastLoc)
+        closestLight?.let { setDistanceTo(closestLight) }
+    }
+
     private fun onReceiveOneClosestLight(light: TrafficLight) {
         view.resetMarkersColors()
         view.setActiveColorMarker(LatLng(light.lat, light.lng))
 
-        view.setDistance(light.location.distanceTo(lastLoc).toDouble())
+        setDistanceTo(light)
         var timeToGreen = 15//todo run timer to update time to green
         view.setTimeToGreen(timeToGreen)
 
         view.setRecommendedSpeed(calculateRecommendedSpeed(light.location.distanceTo(lastLoc), timeToGreen))
+    }
+
+    private fun setDistanceTo(light: TrafficLight) {
+        view.setDistance(light.location.distanceTo(lastLoc).toDouble())
     }
 
     private fun calculateRecommendedSpeed(distance: Float, timeToGreen: Int): Double {

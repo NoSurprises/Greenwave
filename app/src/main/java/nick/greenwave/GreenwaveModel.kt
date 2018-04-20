@@ -20,6 +20,7 @@ class GreenwaveModel(val provider: GreenwaveProviderApi) : GreenwaveModelApi {
     val osmService
             by lazy { OsmService.create() }
     private var lastQueryLightLocation: Location? = null
+    private var closestLight: TrafficLight? = null
 
 
     override fun requestNearestLights(lat: Float, lng: Float) {
@@ -72,20 +73,33 @@ class GreenwaveModel(val provider: GreenwaveProviderApi) : GreenwaveModelApi {
         lastQueryLightLocation = currentLocation
 
         val latLng = LatLng(currentLocation.latitude, currentLocation.longitude)
-        val movementVector = Pair(
-                Math.cos(degreeToRadian(currentLocation.bearing.toDouble())),
-                Math.sin(degreeToRadian(currentLocation.bearing.toDouble())))
+        val movementVector = getMovementVector(currentLocation)
 
-        val closest = nearestLights!!
+        val closestLights = nearestLights!!
                 .filter { isLightCloserThan(it, NEAREST_LIGHT_DISTANCE, currentLocation) }
                 .filter { isLightInFront(it, latLng, movementVector) }
                 .sortedBy { getDistance(latLng, LatLng(it.lat, it.lng)) }
 
-        if (DEBUG) Log.d(TAG, "(79, GreenwaveModel.kt) nearest lights: $closest")
+        if (DEBUG) Log.d(TAG, "(79, GreenwaveModel.kt) nearest lights: $closestLights")
 
-        if (closest.isNotEmpty())
-            return closest.first()
+        if (closestLights.isNotEmpty()) {
+            closestLight = closestLights.first()
+            return closestLight
+        }
+        return null
+    }
 
+    private fun getMovementVector(currentLocation: Location): Pair<Double, Double> {
+        return Pair(
+                Math.cos(degreeToRadian(currentLocation.bearing.toDouble())),
+                Math.sin(degreeToRadian(currentLocation.bearing.toDouble())))
+    }
+
+    override fun getValidClosestLight(location: Location): TrafficLight? {
+        closestLight ?: return null
+        val movementVector = getMovementVector(location)
+        if (isLightInFront(closestLight!!, LatLng(location.latitude, location.longitude), movementVector))
+            return closestLight
         return null
     }
 
