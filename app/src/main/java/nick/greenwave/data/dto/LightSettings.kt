@@ -5,13 +5,16 @@ import android.os.Parcelable
 
 data class LightSettings(var greenCycle: Int = 0,
                          var redCycle: Int = 0,
-                         var startOfMeasurement: Long = 0L) : Parcelable {
+                         var startOfMeasurement: Long = 0L,
+                         var identifier: String = "") : Parcelable {
 
 
     constructor(parcel: Parcel) : this(
             parcel.readInt(),
             parcel.readInt(),
-            parcel.readLong())
+            parcel.readLong(),
+            parcel.readString())
+
 
     override fun describeContents(): Int {
         return 0
@@ -21,6 +24,7 @@ data class LightSettings(var greenCycle: Int = 0,
         p0?.writeInt(greenCycle)
         p0?.writeInt(redCycle)
         p0?.writeLong(startOfMeasurement)
+        p0?.writeString(identifier)
     }
 
     companion object CREATOR : Parcelable.Creator<LightSettings> {

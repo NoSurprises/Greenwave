@@ -1,6 +1,8 @@
 package nick.greenwave.settings
 
+import android.app.Activity
 import android.content.DialogInterface
+import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
@@ -8,16 +10,21 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.EditText
+import android.widget.ToggleButton
 import nick.greenwave.DEBUG
 import nick.greenwave.R
 import nick.greenwave.data.dto.LightSettings
 import utils.EXTRAS_LIGHT_INFO
+import utils.SECOND_IN_MILLIS
+import java.util.*
 
 class SettingsActivity : AppCompatActivity(), SettingsView {
     val TAG = "SettingsActivity"
 
+    var lightSettingsInfo: LightSettings? = null
     val greenCycle: EditText by lazy { findViewById<EditText>(R.id.input_green_cycle) }
     val redCycle: EditText by lazy { findViewById<EditText>(R.id.input_red_cycle) }
+    val currentLight: ToggleButton by lazy { findViewById<ToggleButton>(R.id.current_light) }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,10 +39,11 @@ class SettingsActivity : AppCompatActivity(), SettingsView {
             showErrorDialog()
             return
         }
-        val lightSettingsInfo: LightSettings = extras.getParcelable(EXTRAS_LIGHT_INFO)
+        lightSettingsInfo = extras.getParcelable(EXTRAS_LIGHT_INFO)
+        lightSettingsInfo ?: return
 
-        setGreenCycle(lightSettingsInfo.greenCycle)
-        setRedCycle(lightSettingsInfo.redCycle)
+        setGreenCycle(lightSettingsInfo!!.greenCycle)
+        setRedCycle(lightSettingsInfo!!.redCycle)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -48,12 +56,32 @@ class SettingsActivity : AppCompatActivity(), SettingsView {
             R.id.done -> saveNewSettings()
             else -> return false
         }
-        return true
+        return false
     }
 
     private fun saveNewSettings() {
         if (DEBUG) Log.d(TAG, "(54, SettingsActivity.kt) saveNewSettings")
+        val result = Intent()
+        setNewSettings()
+        result.putExtra(EXTRAS_LIGHT_INFO, lightSettingsInfo)
+        setResult(Activity.RESULT_OK, result)
         finish()
+    }
+
+    private fun setNewSettings() {
+        lightSettingsInfo?.let {
+            if (currentLight.isActivated)  {
+                // red just started, so start of measurement was 1 green cycle ago
+                it.startOfMeasurement = Date().time - it.greenCycle* SECOND_IN_MILLIS
+            }
+            else {
+                it.startOfMeasurement = Date().time
+            }
+
+            it.greenCycle = greenCycle.text.toString().toInt() // todo check input
+            it.redCycle = redCycle.text.toString().toInt()
+        }
+
     }
 
     private fun showErrorDialog() {

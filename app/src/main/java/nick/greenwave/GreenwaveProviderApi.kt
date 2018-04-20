@@ -8,6 +8,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import nick.greenwave.data.TrafficLight
+import nick.greenwave.data.dto.LightSettings
 
 interface GreenwaveProviderApi {
 
@@ -31,5 +32,7 @@ interface GreenwaveProviderApi {
     fun onReceiveNearestLights(lights: List<TrafficLight>)
     fun requestNearestLights(location: Location)
     fun onCameraMoved()
+    fun updateLightSettings(light: LightSettings?)
+    fun onReceiveLightSettings(light: LightSettings)
 
 }

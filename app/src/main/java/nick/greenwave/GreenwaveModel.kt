@@ -7,6 +7,7 @@ import com.google.android.gms.maps.model.LatLng
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import nick.greenwave.data.TrafficLight
+import nick.greenwave.data.dto.LightSettings
 import utils.*
 import java.util.*
 
@@ -22,10 +23,28 @@ class GreenwaveModel(val provider: GreenwaveProviderApi) : GreenwaveModelApi {
     private var lastQueryLightLocation: Location? = null
     private var closestLight: TrafficLight? = null
 
+    override fun createIdentifierFromLatlng(latLng: LatLng) : String {
+        return latLng.toString()
+    }
+
+    override fun requestSettingsForLight(identifier: String) {
+        val lightsRef = FirebaseDatabaseSingletone.getFirebaseInstance().getReference(LIGHTS_REFERENCE_FIREBASE)
+        // todo check if key exists
+
+        provider.onReceiveLightSettings(LightSettings()) // todo it's a callback
+    }
 
     override fun requestNearestLights(lat: Float, lng: Float) {
-        // TODO: 4/5/2018 get lights from db, key is a composition of lon and lat
         requestNearestLightsFromApi(lat, lng)
+    }
+
+    override fun updateLightSettingsInRemoteDb(light: LightSettings) {
+        val lightsRef = FirebaseDatabaseSingletone.getFirebaseInstance().getReference(LIGHTS_REFERENCE_FIREBASE)
+        lightsRef.child(light.identifier).setValue(light)
+    }
+
+    private fun requestNearestLightsFromSharedPreferences() {
+        // todo get nearest lights from Firebase
     }
 
     private fun requestNearestLightsFromApi(lat: Float, lng: Float) {

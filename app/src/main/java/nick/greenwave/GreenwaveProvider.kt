@@ -11,12 +11,16 @@ import com.google.android.gms.maps.model.Marker
 import nick.greenwave.data.TrafficLight
 import nick.greenwave.data.dto.LightSettings
 import utils.CameraMovementLogicHelper
+import utils.SECOND_IN_MILLIS
+import utils.TIMER_NAME_GREEN
+import java.util.*
+import kotlin.concurrent.timer
+import kotlin.math.abs
 
 class GreenwaveProvider(val view: GreenwaveView) : GreenwaveProviderApi {
 
     private var lastLoc: Location = Location("")
     private var lastSpeed: Double = 0.0
-las
     private val model: GreenwaveModelApi = GreenwaveModel(this)
     private val movementHelper = CameraMovementLogicHelper()
     private var needUpdateNearestLight = false
@@ -24,6 +28,10 @@ las
     private val TAG = "GreenwaveProvider"
     override fun onMapReady(map: GoogleMap?) {
         view.requestLocationPermissions()
+    }
+
+    override fun updateLightSettings(light: LightSettings?) {
+        light?.let { model.updateLightSettingsInRemoteDb(it) }
     }
 
     override fun onPermissionsGranted() {
@@ -94,8 +102,13 @@ las
         view.setActiveColorMarker(LatLng(light.lat, light.lng))
 
         setDistanceTo(light)
-        var timeToGreen = 15//todo run timer to update time to green
-        view.setTimeToGreen(timeToGreen)
+
+        val cycle = light.settings.greenCycle + light.settings.redCycle
+        val diff = (Date().time - light.settings.startOfMeasurement) % cycle
+        var timeToGreen = abs(diff - cycle).toInt()
+
+        timer(TIMER_NAME_GREEN, true, Date(), SECOND_IN_MILLIS, {
+            Log.i(TAG, "time to green ${timeToGreen-1}"); view.setTimeToGreen(--timeToGreen); if (timeToGreen == -10) this.cancel()})
 
         view.setRecommendedSpeed(calculateRecommendedSpeed(light.location.distanceTo(lastLoc), timeToGreen))
     }
@@ -131,8 +144,15 @@ las
     override fun openLightSettings(marker: Marker) {
         if (DEBUG) Log.d(TAG, "(80, GreenwaveProvider.kt) openLightSettings for ${marker.snippet}")
         // todo get data from model, maybe bound TrafficLight object in adapter of the card
-        view.startSettingsActivy(LightSettings(0, 0, 22))
+
+        val identifier = model.createIdentifierFromLatlng(marker.position)
+        model.requestSettingsForLight(identifier)
     }
+
+    override fun onReceiveLightSettings(light: LightSettings) {
+        view.startSettingsActivy(light)
+    }
+
 
     override fun onReceiveNearestLights(lights: List<TrafficLight>) {
         view.removeAllMarks()

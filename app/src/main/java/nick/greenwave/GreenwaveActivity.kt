@@ -2,6 +2,7 @@ package nick.greenwave
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
@@ -24,6 +25,8 @@ import nick.greenwave.settings.SettingsActivity
 import utils.*
 
 val DEBUG = true
+
+private val SETTINGS_ACTIVITY_REQUEST_CODE = 23
 
 class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView {
     private val provider: GreenwaveProviderApi = GreenwaveProvider(this)
@@ -170,10 +173,11 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
                 .title("LightSettings")
                 .snippet("${latLng.latitude} ${latLng.longitude}")
 
-
-        markers.add(map?.addMarker(markOptions))
+        val marker = map?.addMarker(markOptions)
+        markers.add(marker)
         map?.setOnMarkerClickListener { openLightPopup(it) }
         map?.setOnInfoWindowClickListener { provider.openLightSettings(it) }
+        marker?.let { provider.openLightSettings(marker) }
 
     }
 
@@ -268,6 +272,14 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
     override fun startSettingsActivy(lightSettingsInfo: LightSettings) {
         val intent = Intent(this, SettingsActivity::class.java)
         intent.putExtra(EXTRAS_LIGHT_INFO, lightSettingsInfo)
-        startActivity(intent)
+        startActivityForResult(intent, SETTINGS_ACTIVITY_REQUEST_CODE)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == SETTINGS_ACTIVITY_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            provider.updateLightSettings(data?.getParcelableExtra(EXTRAS_LIGHT_INFO))
+            return
+        }
+        super.onActivityResult(requestCode, resultCode, data)
     }
 }
