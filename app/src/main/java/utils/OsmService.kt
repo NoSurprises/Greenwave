@@ -8,7 +8,7 @@ import retrofit2.http.Query
 
 interface OsmService {
 
-    @GET("/api/interpreter")
+    @GET("/cgi/interpreter")
     fun fetchChunkData(@Query("data") query: String): io.reactivex.Observable<OsmQueryResult>
 
     companion object {
@@ -16,7 +16,7 @@ interface OsmService {
             val retrofit = Retrofit.Builder()
                     .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                     .addConverterFactory(GsonConverterFactory.create())
-                    .baseUrl("http://overpass-api.de")
+                    .baseUrl("http://overpass.openstreetmap.ru")
                     .build()
 
             return retrofit.create(OsmService::class.java)

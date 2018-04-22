@@ -18,7 +18,7 @@ import utils.EXTRAS_LIGHT_INFO
 import utils.SECOND_IN_MILLIS
 import java.util.*
 
-class SettingsActivity : AppCompatActivity(), SettingsView {
+class SettingsActivity : AppCompatActivity() {
     val TAG = "SettingsActivity"
 
     var lightSettingsInfo: LightSettings? = null
@@ -92,11 +92,11 @@ class SettingsActivity : AppCompatActivity(), SettingsView {
                 .show()
     }
 
-    override fun setGreenCycle(v: Int) {
+    fun setGreenCycle(v: Int) {
         greenCycle.setText(v.toString())
     }
 
-    override fun setRedCycle(v: Int) {
+    fun setRedCycle(v: Int) {
         redCycle.setText(v.toString())
     }
 

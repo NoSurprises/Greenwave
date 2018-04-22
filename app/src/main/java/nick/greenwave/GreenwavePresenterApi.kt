@@ -10,7 +10,7 @@ import com.google.android.gms.maps.model.Marker
 import nick.greenwave.data.TrafficLight
 import nick.greenwave.data.dto.LightSettings
 
-interface GreenwaveProviderApi {
+interface GreenwavePresenterApi {
 
     fun onMapReady(map: GoogleMap?)
 
@@ -34,5 +34,6 @@ interface GreenwaveProviderApi {
     fun onCameraMoved()
     fun updateLightSettings(light: LightSettings?)
     fun onReceiveLightSettings(light: LightSettings)
+    fun forceChooseNewClosestLight()
 
 }

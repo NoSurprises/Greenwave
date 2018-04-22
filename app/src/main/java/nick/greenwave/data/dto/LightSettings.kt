@@ -2,7 +2,10 @@ package nick.greenwave.data.dto
 
 import android.os.Parcel
 import android.os.Parcelable
+import android.util.Log
+import nick.greenwave.DEBUG
 
+val TAG = "LightSettings"
 data class LightSettings(var greenCycle: Int = 0,
                          var redCycle: Int = 0,
                          var startOfMeasurement: Long = 0L,
@@ -35,5 +38,24 @@ data class LightSettings(var greenCycle: Int = 0,
         override fun newArray(size: Int): Array<LightSettings?> {
             return arrayOfNulls(size)
         }
+        fun parseFromString(str: String): LightSettings {
+            val result = LightSettings()
+            if (DEBUG) Log.d(TAG, "(40, LightSettings.kt) parseFromString: $str")
+            val tokens = str.split("-")
+            result.greenCycle = tokens[0].toInt()
+            result.redCycle = tokens[1].toInt()
+            result.startOfMeasurement = tokens[2].toLong()
+            return result
+        }
     }
+
+    fun isSet() :Boolean {
+        return startOfMeasurement != 0L
+    }
+
+    override fun toString(): String {
+        return "$greenCycle-$redCycle-$startOfMeasurement"
+    }
+
+
 }

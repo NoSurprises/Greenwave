@@ -29,12 +29,11 @@ val DEBUG = true
 private val SETTINGS_ACTIVITY_REQUEST_CODE = 23
 
 class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView {
-    private val provider: GreenwaveProviderApi = GreenwaveProvider(this)
+    private val presenter: GreenwavePresenterApi = GreenwavePresenter(this)
 
     private val TAG = "GreenwaveActivity"
     private var locationCallback: LocationCallback? = null
     private val fusedLocationClient by lazy { LocationServices.getFusedLocationProviderClient(this) }
-
 
     private val lonView by lazy { findViewById<TextView>(R.id.lon) }
     private val latView by lazy { findViewById<TextView>(R.id.lat) }
@@ -66,7 +65,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         setContentView(R.layout.greenwave)
 
         if (DEBUG) Log.d(TAG, "onCreate: ")
-        requestNearestLights.setOnClickListener { getDeviceLocation()?.addOnSuccessListener { provider.requestNearestLights(it) } }
+        requestNearestLights.setOnClickListener { getDeviceLocation()?.addOnSuccessListener { presenter.requestNearestLights(it) } }
         val mapFragment = fragmentManager.findFragmentById(R.id.map) as MapFragment
         mapFragment.getMapAsync(this)
     }
@@ -75,12 +74,12 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         if (DEBUG) Log.d(TAG, "(53, GreenwaveActivity.kt) onMapReady $map")
         this.map = map
 
-        map?.setOnMapLongClickListener { provider.addMapMark(it) }
+        map?.setOnMapLongClickListener { presenter.addMapMark(it) }
         map?.setOnCameraMoveStartedListener {
-            provider.onCameraMoved()
+            presenter.onCameraMoved()
         }
 
-        provider.onMapReady(map)
+        presenter.onMapReady(map)
 
     }
 
@@ -121,7 +120,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
     override fun requestLocationPermissions() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
-            provider.onPermissionsGranted()
+            presenter.onPermissionsGranted()
         } else {
             if (DEBUG) Log.d(TAG, "(62, GreenwaveActivity.kt) onMapReady: request location permission")
             ActivityCompat.requestPermissions(this, Array(1) { LOCATION_PERMISSION }, LOCATION_PERMISSION_REQUEST)
@@ -167,7 +166,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
-    override fun addMark(latLng: LatLng) {
+    override fun addMark(latLng: LatLng, openSettings: Boolean) {
         val markOptions = MarkerOptions()
                 .position(latLng)
                 .title("LightSettings")
@@ -176,8 +175,11 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         val marker = map?.addMarker(markOptions)
         markers.add(marker)
         map?.setOnMarkerClickListener { openLightPopup(it) }
-        map?.setOnInfoWindowClickListener { provider.openLightSettings(it) }
-        marker?.let { provider.openLightSettings(marker) }
+        map?.setOnInfoWindowClickListener { presenter.openLightSettings(it) }
+
+        if (openSettings) {
+            marker?.let { presenter.openLightSettings(marker) }
+        }
 
     }
 
@@ -199,12 +201,12 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
 
     override fun onResume() {
         super.onResume()
-        provider.onResume()
+        presenter.onResume()
     }
 
     override fun onPause() {
         super.onPause()
-        provider.onPause()
+        presenter.onPause()
     }
 
     override fun mapToDeviceLocation() {
@@ -226,7 +228,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         if (requestCode == LOCATION_PERMISSION_REQUEST && permissions[0] == LOCATION_PERMISSION
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            provider.onPermissionsGranted()
+            presenter.onPermissionsGranted()
         } else {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         }
@@ -259,7 +261,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
                 if (DEBUG) Log.d(TAG, "locations: ${loc?.locations}")
                 if (DEBUG) Log.d(TAG, "lastLocation: ${loc?.lastLocation}")
 
-                loc?.let { provider.onLocationUpdate(loc) }
+                loc?.let { presenter.onLocationUpdate(loc) }
             }
         }
     }
@@ -277,7 +279,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == SETTINGS_ACTIVITY_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
-            provider.updateLightSettings(data?.getParcelableExtra(EXTRAS_LIGHT_INFO))
+            presenter.updateLightSettings(data?.getParcelableExtra(EXTRAS_LIGHT_INFO))
             return
         }
         super.onActivityResult(requestCode, resultCode, data)
