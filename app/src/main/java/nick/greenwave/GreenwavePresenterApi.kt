@@ -33,7 +33,7 @@ interface GreenwavePresenterApi {
     fun requestNearestLights(location: Location)
     fun onCameraMoved()
     fun updateLightSettings(light: LightSettings?)
-    fun onReceiveLightSettings(light: LightSettings)
+    fun onReceiveLightSettingsOpenSettings(light: LightSettings)
     fun forceChooseNewClosestLight()
 
 }

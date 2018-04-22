@@ -9,7 +9,7 @@ val TAG = "LightSettings"
 data class LightSettings(var greenCycle: Int = 0,
                          var redCycle: Int = 0,
                          var startOfMeasurement: Long = 0L,
-                         var identifier: String = "") : Parcelable {
+                         var identifier: String = "1") : Parcelable {
 
 
     constructor(parcel: Parcel) : this(

@@ -8,18 +8,22 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
 import nick.greenwave.data.Storage
 import nick.greenwave.data.TrafficLight
 import nick.greenwave.data.dto.LightSettings
-import utils.CameraMovementLogicHelper
-import utils.MeanSpeed
-import utils.SECOND_IN_MILLIS
-import utils.TIMER_NAME_GREEN
+import utils.*
 import java.util.*
-import kotlin.concurrent.timer
+import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 
-class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi {
+interface FirebaseLightSettingsCallback {
+    fun openSettings(light: LightSettings)
+    fun getSettings(light: LightSettings)
+}
+
+class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, FirebaseLightSettingsCallback {
 
     private var lastLoc: Location = Location("")
     private var lastSpeed: Double = 0.0
@@ -87,7 +91,7 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi {
         }
     }
 
-    override fun forceChooseNewClosestLight()  {
+    override fun forceChooseNewClosestLight() {
         needUpdateNearestLight = true
     }
 
@@ -95,12 +99,12 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi {
         if (needUpdateNearestLight) {
             needUpdateNearestLight = false
             val closest = model.getNearestLight(lastLoc)
-            closest?.let { onReceiveOneClosestLight(closest) }
+            closest?.let { model.requestSettingsForLight(closest.settings.identifier, REQUEST_FIREBASE_CLOSEST_LIGHT_SETTINGS) }
         }
     }
 
     private fun updateDistanceToClosestLight() {
-        val closestLight = model.getValidClosestLight(lastLoc)
+        val closestLight = model.getDefinedClosestFrontLight(lastLoc)
         closestLight?.let { setDistanceTo(closestLight) }
     }
 
@@ -110,17 +114,27 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi {
 
         setDistanceTo(light)
 
-        if (light.settings.isSet()) {
-            val cycle = light.settings.greenCycle + light.settings.redCycle
-            val diff = (Date().time - light.settings.startOfMeasurement) % cycle
-            var timeToGreen = abs(diff - cycle).toInt()
-
-            timer(TIMER_NAME_GREEN, true, 0L, SECOND_IN_MILLIS, {
-                Log.i(TAG, "time to green ${timeToGreen - 1}"); view.setTimeToGreen(--timeToGreen); if (timeToGreen == -10) this.cancel()
-            })
-
-            view.setRecommendedSpeed(calculateRecommendedSpeed(light.location.distanceTo(lastLoc), timeToGreen))
+        if (!light.settings.isSet()) {
+            return
         }
+
+        val cycle = light.settings.greenCycle + light.settings.redCycle
+        val diff = (Date().time - light.settings.startOfMeasurement) % cycle
+        var timeToGreen = abs(diff - cycle).toInt()
+        if (DEBUG) Log.d(TAG, "(114, GreenwavePresenter.kt) light has settings, time to green $timeToGreen")
+
+        val subscription = Observable.timer(SECOND_IN_MILLIS, TimeUnit.MILLISECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
+                .repeat(timeToGreen.toLong())
+                .subscribe({
+                    Log.i(TAG, "time to green ${timeToGreen - 1}")
+                    view.setTimeToGreen(--timeToGreen)
+                    view.setRecommendedSpeed(calculateRecommendedSpeed(light.location.distanceTo(lastLoc), timeToGreen))
+                })
+        // todo dispose like subscription.unsubscribe()
+
+
+
     }
 
     private fun setDistanceTo(light: TrafficLight) {
@@ -146,7 +160,8 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi {
         lastSpeed = meanSpeedHelper.getMeanSpeed() * 3.6
         view.setCurrentSpeed(lastSpeed) // convert from m/s to km/h
     }
-    private val userLightsStorage by lazy {  Storage(view.getApplicationContext()) }
+
+    private val userLightsStorage by lazy { Storage(view.getApplicationContext()) }
 
     override fun addMapMark(latLng: LatLng) {
         // todo save in model
@@ -159,10 +174,19 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi {
         // todo get data from model, maybe bound TrafficLight object in adapter of the card
 
         val identifier = model.createIdentifierFromLatlng(marker.position)
-        model.requestSettingsForLight(identifier)
+        model.requestSettingsForLight(identifier, REQUEST_FIREBASE_SETTINGS_TO_OPEN_SETTINGS)
     }
 
-    override fun onReceiveLightSettings(light: LightSettings) {
+    override fun getSettings(light: LightSettings) {
+        if (DEBUG) Log.d(TAG, "(176, GreenwavePresenter.kt) getSettings: $light")
+        onReceiveOneClosestLight(TrafficLight.createFromSettings(light))
+    }
+
+    override fun openSettings(light: LightSettings) {
+        onReceiveLightSettingsOpenSettings(light)
+    }
+
+    override fun onReceiveLightSettingsOpenSettings(light: LightSettings) {
         view.startSettingsActivy(light)
     }
 
@@ -180,7 +204,6 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi {
         model.requestNearestLights(location.latitude.toFloat(), location.longitude.toFloat())
         forceChooseNewClosestLight()
     }
-
 
 
 }

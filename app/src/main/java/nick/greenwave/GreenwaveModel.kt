@@ -9,13 +9,11 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
-import kotlinx.coroutines.experimental.delay
 import nick.greenwave.data.Storage
 import nick.greenwave.data.TrafficLight
 import nick.greenwave.data.dto.LightSettings
 import utils.*
 import java.util.*
-import java.util.Timer
 import kotlin.concurrent.timer
 
 
@@ -28,28 +26,34 @@ class GreenwaveModel(val presenter: GreenwavePresenterApi) : GreenwaveModelApi {
     private var lastQueryLightLocation: Location? = null
     private var closestLight: TrafficLight? = null
 
+    private val userLightsStorage by lazy { Storage(presenter.getApplicationContext()) }
+
     override fun createIdentifierFromLatlng(latLng: LatLng): String {
         val result = "${latLng.latitude}-${latLng.longitude}"
         return result.replace('.', ';')
     }
 
-    override fun requestSettingsForLight(identifier: String) {
+
+    override fun requestSettingsForLight(identifier: String, request: Int) {
         val lightsRef = FirebaseDatabaseSingletone.getFirebaseInstance().getReference(LIGHTS_REFERENCE_FIREBASE)
-        if (DEBUG) Log.d(TAG, "(35, GreenwaveModel.kt) requestSettingsForLight $lightsRef")
+        if (DEBUG) Log.d(TAG, "(35, GreenwaveModel.kt) requestSettingsForLight $lightsRef identifier=$identifier")
         // todo check if key exists
 
-        val noSettingsTimer =  timer("no_settings", false, SECOND_IN_MILLIS, SECOND_IN_MILLIS,
-                {presenter.onReceiveLightSettings(LightSettings(identifier = identifier)); this.cancel()})
+        val noSettingsTimer = timer("no_settings", false, SECOND_IN_MILLIS, SECOND_IN_MILLIS,
+                {
+                    replyToRequest(request, LightSettings(identifier = identifier))
+                    this.cancel()
+                })
         lightsRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 var lightSettings = LightSettings(identifier = identifier)
-                if (DEBUG) Log.d(TAG, "(38, GreenwaveModel.kt) getting settings from firebase, check if key exists in $snapshot" )
+                if (DEBUG) Log.d(TAG, "(38, GreenwaveModel.kt) getting settings from firebase, check if key exists in $snapshot")
                 if (snapshot.hasChild(identifier)) {
                     val data = snapshot.child(identifier).getValue(LightSettings::class.java)
                     lightSettings = data!!
                 }
                 if (DEBUG) Log.d(TAG, "(43, GreenwaveModel.kt) firebase settings: $lightSettings ")
-                presenter.onReceiveLightSettings(lightSettings)
+                replyToRequest(request, lightSettings)
                 noSettingsTimer.cancel()
             }
 
@@ -57,17 +61,38 @@ class GreenwaveModel(val presenter: GreenwavePresenterApi) : GreenwaveModelApi {
                 if (DEBUG) Log.d(TAG, "(44, GreenwaveModel.kt) onCancelled firebase: $p0")
             }
         })
-
-
     }
 
-    override fun requestNearestLights(lat: Float, lng: Float) {
-        requestNearestLightsFromApi(lat, lng)
+    /**
+     * Firebase callback
+     */
+    private fun replyToRequest(request: Int, settings: LightSettings) {
+        if (DEBUG) Log.d(TAG, "(70, GreenwaveModel.kt) replyToRequest: $settings")
+        when (request) {
+            REQUEST_FIREBASE_CLOSEST_LIGHT_SETTINGS ->
+                (presenter as FirebaseLightSettingsCallback).getSettings(settings)
+            REQUEST_FIREBASE_SETTINGS_TO_OPEN_SETTINGS ->
+                (presenter as FirebaseLightSettingsCallback).openSettings(settings)
+        }
     }
 
     override fun updateLightSettingsInRemoteDb(light: LightSettings) {
         val lightsRef = FirebaseDatabaseSingletone.getFirebaseInstance().getReference(LIGHTS_REFERENCE_FIREBASE)
         lightsRef.child(light.identifier).setValue(light)
+    }
+
+    private fun createQuery(lat: Float, lng: Float): String {
+        val bounds = "(${lat - NEAREST_LIGHTS_MARGIN},${lng - NEAREST_LIGHTS_MARGIN}," +
+                "${lat + NEAREST_LIGHTS_MARGIN},${lng + NEAREST_LIGHTS_MARGIN})"
+
+        val result = StringBuilder()
+        OVERPASS_QUERY.split(OVERPASS_QUERY_DELIMETER).joinTo(result, bounds)
+        if (DEBUG) Log.d(TAG, "(88, GreenwaveModel.kt) createdQuery: $result")
+        return result.toString()
+    }
+
+    override fun requestNearestLights(lat: Float, lng: Float) {
+        requestNearestLightsFromApi(lat, lng)
     }
 
     private fun requestNearestLightsFromSharedPreferences() {
@@ -89,18 +114,6 @@ class GreenwaveModel(val presenter: GreenwavePresenterApi) : GreenwaveModelApi {
                 )
     }
 
-    private fun createQuery(lat: Float, lng: Float): String {
-        val bounds = "(${lat - NEAREST_LIGHTS_MARGIN},${lng - NEAREST_LIGHTS_MARGIN}," +
-                "${lat + NEAREST_LIGHTS_MARGIN},${lng + NEAREST_LIGHTS_MARGIN})"
-
-        val result = StringBuilder()
-        OVERPASS_QUERY.split(OVERPASS_QUERY_DELIMETER).joinTo(result, bounds)
-        if (DEBUG) Log.d(TAG, "(88, GreenwaveModel.kt) createdQuery: $result")
-        return result.toString()
-    }
-
-    private val userLightsStorage by lazy { Storage(presenter.getApplicationContext()) }
-
     private fun onReceiveNearestLights(result: OsmQueryResult, fromDatabase: Boolean = false) {
         if (!fromDatabase) {
             // TODO: 4/5/2018 save in database
@@ -108,7 +121,10 @@ class GreenwaveModel(val presenter: GreenwavePresenterApi) : GreenwaveModelApi {
         nearestLights = null
         val lights = ArrayList<TrafficLight>()
         for (element in result.elements) {
-            lights.add(TrafficLight(element.lat, element.lon))
+            val identifier = "${element.lat}-${element.lon}".replace('.', ';')
+            val light = TrafficLight(element.lat, element.lon, LightSettings(identifier = identifier))
+            if (DEBUG) Log.d(TAG, "(124, GreenwaveModel.kt) create TrafficLight ${light}")
+            lights.add(light)
         }
         userLightsStorage.getAllLights().forEach({ lights.add(it) })
 
@@ -144,9 +160,10 @@ class GreenwaveModel(val presenter: GreenwavePresenterApi) : GreenwaveModelApi {
                 Math.sin(degreeToRadian(currentLocation.bearing.toDouble())))
     }
 
-    override fun getValidClosestLight(location: Location): TrafficLight? {
+    override fun getDefinedClosestFrontLight(location: Location): TrafficLight? {
         closestLight ?: return null
         val movementVector = getMovementVector(location)
+        // Check if user has passed the light. If not so, return
         if (isLightInFront(closestLight!!, LatLng(location.latitude, location.longitude), movementVector))
             return closestLight
         return null

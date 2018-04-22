@@ -2,7 +2,6 @@ package nick.greenwave.data
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.nfc.Tag
 import android.util.Log
 import nick.greenwave.DEBUG
 import nick.greenwave.data.dto.LightSettings
@@ -22,6 +21,7 @@ class Storage(val context: Context) {
     }
 
 
+
     fun createKey(light: TrafficLight): String {
         return "${light.lat}-${light.lng}".replace('.',';')
     }
@@ -35,16 +35,18 @@ class Storage(val context: Context) {
         val pair = parseKey(key)
         val result = TrafficLight(pair.first, pair.second)
         result.settings = LightSettings.parseFromString(value)
+        result.settings.identifier = key
         if (DEBUG) Log.d(TAG, "(29, Storage.kt) parsed: $result")
 
         return result
     }
 
-
-    fun parseKey(key: String): Pair<Double, Double> {
-        val pair = key.split("-")
-        return Pair(pair[0].replace(';', '.').toDouble(),
-                pair[1].replace(';', '.').toDouble())
+    companion object {
+        fun parseKey(key: String): Pair<Double, Double> {
+            val pair = key.split("-")
+            return Pair(pair[0].replace(';', '.').toDouble(),
+                    pair[1].replace(';', '.').toDouble())
+        }
     }
 
     fun getAllLights() : List<TrafficLight> {

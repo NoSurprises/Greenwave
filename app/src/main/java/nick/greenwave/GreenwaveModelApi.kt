@@ -10,9 +10,9 @@ interface GreenwaveModelApi {
     fun requestNearestLights(lat: Float, lng: Float)
     fun getNearestLight(currentLocation: Location): TrafficLight?
     fun detectNotableDistanceFromLastQueryLight(currentLocation: Location): Boolean
-    fun getValidClosestLight(location: Location): TrafficLight?
+    fun getDefinedClosestFrontLight(location: Location): TrafficLight?
     fun updateLightSettingsInRemoteDb(light: LightSettings)
     fun createIdentifierFromLatlng(latLng: LatLng) : String
-    fun requestSettingsForLight(identifier: String)
+    fun requestSettingsForLight(identifier: String, request: Int)
 
 }
