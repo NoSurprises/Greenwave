@@ -37,5 +37,6 @@ interface GreenwaveView {
     fun setRecommendedSpeed(speed: Double)
     fun setTimeToGreen(time: Int)
     fun setEmptyRecommendedFields()
+    fun onReceiveSettings(light: LightSettings)
 
 }

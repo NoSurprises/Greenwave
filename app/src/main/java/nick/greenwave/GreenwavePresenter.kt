@@ -22,6 +22,7 @@ import kotlin.math.abs
 interface FirebaseLightSettingsCallback {
     fun openSettings(light: LightSettings)
     fun getSettings(light: LightSettings)
+    fun onReceiveJustSettings(light: LightSettings)
 }
 
 class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, FirebaseLightSettingsCallback {
@@ -125,7 +126,7 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, Fireb
         }
 
         val cycle = light.settings.greenCycle + light.settings.redCycle
-        val diff = (Date().time - light.settings.startOfMeasurement) % cycle
+        val diff = ((Date().time - light.settings.startOfMeasurement) / 1000) % cycle
         var timeToGreen = abs(diff - cycle).toInt() // todo equation
         if (DEBUG) Log.d(TAG, "(114, GreenwavePresenter.kt) light has settings, time to green $timeToGreen")
 
@@ -140,7 +141,6 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, Fireb
                 })
 
 
-        // todo dispose like subscription.unsubscribe()
 
     }
 
@@ -180,11 +180,16 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, Fireb
         model.setNewClosestLight(TrafficLight(position.latitude, position.longitude))
         model.requestSettingsForLight(model.createIdentifierFromLatlng(position), REQUEST_FIREBASE_CLOSEST_LIGHT_SETTINGS)
     }
+
     override fun openLightSettings(marker: Marker) {
         if (DEBUG) Log.d(TAG, "(80, GreenwavePresenterr.kt) openLightSettings for ${marker.snippet}")
-        // todo get data from model, maybe bound TrafficLight object in adapter of the card
 
         val identifier = model.createIdentifierFromLatlng(marker.position)
+        model.requestSettingsForLight(identifier, REQUEST_FIREBASE_SETTINGS_TO_OPEN_SETTINGS)
+    }
+
+    override fun openLightSettings(position: LatLng) {
+        val identifier = model.createIdentifierFromLatlng(position)
         model.requestSettingsForLight(identifier, REQUEST_FIREBASE_SETTINGS_TO_OPEN_SETTINGS)
     }
 
@@ -214,6 +219,14 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, Fireb
         if (DEBUG) Log.d(TAG, "(99, GreenwavePresenterr.kt) requestNearestLights for $location")
         model.requestNearestLights(location.latitude.toFloat(), location.longitude.toFloat())
         forceChooseNewClosestLight()
+    }
+
+    override fun requestSettingsFor(latLng: LatLng) {
+        model.requestSettingsForLight(model.createIdentifierFromLatlng(latLng), REQUEST_FIREBASE_JUST_SETTINGS)
+    }
+
+    override fun onReceiveJustSettings(light: LightSettings) {
+        view.onReceiveSettings(light)
     }
 
 

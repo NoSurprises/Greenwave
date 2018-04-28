@@ -73,6 +73,8 @@ class GreenwaveModel(val presenter: GreenwavePresenterApi) : GreenwaveModelApi {
                 (presenter as FirebaseLightSettingsCallback).getSettings(settings)
             REQUEST_FIREBASE_SETTINGS_TO_OPEN_SETTINGS ->
                 (presenter as FirebaseLightSettingsCallback).openSettings(settings)
+            REQUEST_FIREBASE_JUST_SETTINGS ->
+                (presenter as FirebaseLightSettingsCallback).onReceiveJustSettings(settings)
         }
     }
 

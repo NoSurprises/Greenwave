@@ -36,5 +36,7 @@ interface GreenwavePresenterApi {
     fun onReceiveLightSettingsOpenSettings(light: LightSettings)
     fun forceChooseNewClosestLight()
     fun chooseNewLight(position: LatLng)
+    fun requestSettingsFor(latLng: LatLng)
+    fun openLightSettings(position: LatLng)
 
 }

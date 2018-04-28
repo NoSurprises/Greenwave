@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.location.Location
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
@@ -13,6 +14,7 @@ import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -21,9 +23,15 @@ import com.google.android.gms.maps.MapFragment
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.*
 import com.google.android.gms.tasks.Task
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
 import nick.greenwave.data.dto.LightSettings
 import nick.greenwave.settings.SettingsActivity
 import utils.*
+import java.util.*
+import java.util.concurrent.TimeUnit
 
 val DEBUG = true
 
@@ -42,10 +50,24 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
     private val speedView by lazy { findViewById<TextView>(R.id.current_speed) }
     private val recommendedSpeed by lazy { findViewById<TextView>(R.id.recommended_speed) }
     private val remainingDistance by lazy { findViewById<TextView>(R.id.distance_remaining) }
+
+    private val lightInfoView by lazy { findViewById<LinearLayout>(R.id.light_settings_view) }
+    private val redCycle by lazy { lightInfoView.findViewById<TextView>(R.id.red_cycle) }
+    private val greenCycle by lazy { lightInfoView.findViewById<TextView>(R.id.green_cycle) }
+    private val current by lazy { lightInfoView.findViewById<TextView>(R.id.current) }
+    private val select by lazy { lightInfoView.findViewById<Button>(R.id.select_current) }
+    private val settings by lazy { lightInfoView.findViewById<Button>(R.id.open_settings) }
+    private var lastMarkerClicked: Marker? = null
+
+
+    private var stopSelectedMarkerTimer = false
+
     private val timeToGreen by lazy { findViewById<TextView>(R.id.time) }
     private var map: GoogleMap? = null
     private var mCameraPosition: CameraPosition? = null
     private val markers = ArrayList<Marker?>()
+    private var selectedMarkerCurrentLight: Disposable? = null
+
     override var cameraPosition: CameraPosition?
         get() = mCameraPosition
         set(value) {
@@ -78,6 +100,14 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         map?.setOnCameraMoveStartedListener {
             presenter.onCameraMoved()
         }
+        map?.setOnMarkerClickListener { showLightInfoView(it) }
+        map?.setOnInfoWindowClickListener {
+            Log.d(TAG, "choose light");
+            presenter.chooseNewLight(it.position)
+        }
+        map?.setOnInfoWindowLongClickListener { presenter.openLightSettings(it) }
+
+        map?.setOnMapClickListener { hideLightInfoView() }
 
         presenter.onMapReady(map)
 
@@ -171,17 +201,6 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
-    val infoWindowAdapter = object : GoogleMap.InfoWindowAdapter {
-        override fun getInfoContents(p0: Marker?): View? {
-
-            val popup = layoutInflater.inflate(R.layout.light_info_popup, null, false)
-            return popup
-        }
-
-        override fun getInfoWindow(p0: Marker?): View? {
-            return null
-        }
-    }
     override fun addMark(latLng: LatLng, openSettings: Boolean) {
         val markOptions = MarkerOptions()
                 .position(latLng)
@@ -190,14 +209,6 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
 
         val marker = map?.addMarker(markOptions)
         markers.add(marker)
-        map?.setOnMarkerClickListener { openLightPopup(it) }
-        map?.setOnInfoWindowClickListener {
-            Log.d(TAG, "choose light");
-            presenter.chooseNewLight(it.position)
-        }
-        map?.setOnInfoWindowLongClickListener { presenter.openLightSettings(it) }
-        map?.setInfoWindowAdapter(infoWindowAdapter)
-
 
         if (openSettings) {
             marker?.let { presenter.openLightSettings(marker) }
@@ -205,9 +216,47 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
 
     }
 
-    private fun openLightPopup(marker: Marker): Boolean {
-        marker.showInfoWindow()
+    override fun onReceiveSettings(light: LightSettings) {
 
+        lightInfoView.visibility = View.VISIBLE
+        greenCycle.text = light.greenCycle.toString()
+        redCycle.text = light.redCycle.toString()
+        current.text = ""
+        lastMarkerClicked?.let { settings.setOnClickListener { presenter.openLightSettings(lastMarkerClicked!!) } }
+        lastMarkerClicked?.let { select.setOnClickListener { presenter.chooseNewLight(lastMarkerClicked!!.position) } }
+
+        stopSelectedMarkerTimer = false
+        if (!light.isSet()) {
+            return
+        }
+        selectedMarkerCurrentLight = Observable.timer(SECOND_IN_MILLIS, TimeUnit.MILLISECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .repeatUntil { stopSelectedMarkerTimer }
+                .subscribe({
+                    val currentTime = Date().time
+                    val diff = ((currentTime - light.startOfMeasurement) / 1000) % (light.redCycle + light.greenCycle)
+                    if (diff < light.greenCycle) {
+                        current.text = "Green ${light.greenCycle - diff}"
+                        current.setTextColor(Color.GREEN)
+                    } else {
+                        current.text = "Red ${light.redCycle - (diff - light.greenCycle)}"
+                        current.setTextColor(Color.RED)
+                    }
+                })
+    }
+
+    private fun hideLightInfoView() {
+        stopSelectedMarkerTimer = true
+        selectedMarkerCurrentLight?.dispose()
+        lightInfoView.visibility = View.GONE
+    }
+
+    private fun showLightInfoView(marker: Marker): Boolean {
+        lastMarkerClicked = marker
+        marker.showInfoWindow()
+        hideLightInfoView()
+        presenter.requestSettingsFor(marker.position)
         return true
     }
 
