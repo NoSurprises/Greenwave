@@ -120,9 +120,13 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, Fireb
             return
         }
 
+        val distance = light.location.distanceTo(lastLoc)
+
         val cycle = light.settings.greenCycle + light.settings.redCycle
-        val diff = ((Date().time - light.settings.startOfMeasurement) / 1000) % cycle
-        var timeToGreen = abs(diff - cycle).toInt() // todo equation
+        val diff = (((Date().time - light.settings.startOfMeasurement) / 1000) % cycle).toInt()
+
+        var timeToGreen = findOptimalTimeToGreen(light, diff, distance, cycle)
+
         if (DEBUG) Log.d(TAG, "(114, GreenwavePresenter.kt) light has settings, time to green $timeToGreen")
 
 
@@ -130,13 +134,38 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, Fireb
                 .observeOn(AndroidSchedulers.mainThread())
                 .repeat(timeToGreen.toLong())
                 .subscribe({
-                    Log.i(TAG, "time to green ${timeToGreen - 1}")
+                    Log.v(TAG, "time to green ${timeToGreen - 1}")
                     view.setTimeToGreen(--timeToGreen)
                     view.setRecommendedSpeed(calculateRecommendedSpeed(light.location.distanceTo(lastLoc), timeToGreen))
                 })
 
 
 
+    }
+
+    private fun findOptimalTimeToGreen(light: TrafficLight, diff: Int, distance: Float, cycle: Int): Int {
+        var closestStartOfGreen = light.settings.redCycle - diff // may be < 0
+        var minimalCorrectionOfSpeed = 10000F
+        var optimalMultiplier = 1
+        if (closestStartOfGreen > 0) {
+            optimalMultiplier = 0
+        }
+
+        var lastCorrection = minimalCorrectionOfSpeed
+        for (i in optimalMultiplier..100) {
+            val currentCorrection = abs(5 - distance / (closestStartOfGreen + i * cycle))
+            if (currentCorrection > lastCorrection) {
+                break
+            }
+            lastCorrection = currentCorrection
+            if (currentCorrection < minimalCorrectionOfSpeed) {
+                minimalCorrectionOfSpeed = currentCorrection
+                optimalMultiplier = i
+            }
+        }
+
+        var timeToGreen = optimalMultiplier * cycle + closestStartOfGreen
+        return timeToGreen
     }
 
     private fun setDistanceTo(light: TrafficLight) {

@@ -48,7 +48,11 @@ class Storage(private val context: Context) {
 
     fun getAllLights() : List<TrafficLight> {
         val userLights = ArrayList<TrafficLight> ()
-        preferences.all.forEach({userLights.add(parseValue(it.key, it.value as String))})
+        try {
+            preferences.all.forEach({ userLights.add(parseValue(it.key, it.value as String)) })
+        } catch (e: Exception) {
+            Log.w(TAG, "(53, Storage.kt) getAllLights: $e")
+        }
         return  userLights
     }
 }
