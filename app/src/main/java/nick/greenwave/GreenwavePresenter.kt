@@ -90,8 +90,8 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, Fireb
 
     private fun detectTimeToUpdateClosestLight() {
         if (model.detectNotableDistanceFromLastQueryLight(lastLoc)) {
-            if (DEBUG) Log.d(TAG, "(63, GreenwavePresenter.ktt) time to choose nearest light")
-            forceChooseNewClosestLight()
+            if (DEBUG) Log.d(TAG, "(63, GreenwavePresenter.ktt) time to update nearest lights")
+            requestNearestLights(lastLoc)
         }
     }
 

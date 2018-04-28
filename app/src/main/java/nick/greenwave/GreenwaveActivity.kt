@@ -110,6 +110,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         map?.setOnMapClickListener { hideLightInfoView() }
 
         presenter.onMapReady(map)
+        getDeviceLocation()?.addOnSuccessListener { presenter.requestNearestLights(it) }
 
     }
 
