@@ -133,6 +133,9 @@ class GreenwaveModel(val presenter: GreenwavePresenterApi) : GreenwaveModelApi {
     }
 
 
+    override fun setNewClosestLight(light: TrafficLight) {
+        closestLight = light
+    }
     override fun getNearestLight(currentLocation: Location): TrafficLight? {
         nearestLights ?: return null
         lastQueryLightLocation = currentLocation

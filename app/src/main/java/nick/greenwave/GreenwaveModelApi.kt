@@ -14,5 +14,6 @@ interface GreenwaveModelApi {
     fun updateLightSettingsInRemoteDb(light: LightSettings)
     fun createIdentifierFromLatlng(latLng: LatLng) : String
     fun requestSettingsForLight(identifier: String, request: Int)
+    fun setNewClosestLight(light: TrafficLight)
 
 }

@@ -36,5 +36,6 @@ interface GreenwaveView {
     fun setDistance(distance: Double)
     fun setRecommendedSpeed(speed: Double)
     fun setTimeToGreen(time: Int)
+    fun setEmptyRecommendedFields()
 
 }

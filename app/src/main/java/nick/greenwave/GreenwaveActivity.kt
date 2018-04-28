@@ -11,6 +11,7 @@ import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import com.google.android.gms.location.*
@@ -45,13 +46,11 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
     private var map: GoogleMap? = null
     private var mCameraPosition: CameraPosition? = null
     private val markers = ArrayList<Marker?>()
-
     override var cameraPosition: CameraPosition?
         get() = mCameraPosition
         set(value) {
             mCameraPosition = value
         }
-
     private val locationUpdateRequest by lazy {
         LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
@@ -59,13 +58,14 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
                 .setFastestInterval(SECOND_IN_MILLIS)
     }
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.greenwave)
 
         if (DEBUG) Log.d(TAG, "onCreate: ")
-        requestNearestLights.setOnClickListener { getDeviceLocation()?.addOnSuccessListener { presenter.requestNearestLights(it) } }
+        requestNearestLights.setOnClickListener {
+            getDeviceLocation()?.addOnSuccessListener { presenter.requestNearestLights(it) }
+        }
         val mapFragment = fragmentManager.findFragmentById(R.id.map) as MapFragment
         mapFragment.getMapAsync(this)
     }
@@ -109,7 +109,12 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
     }
 
     override fun resetMarkersColors() {
-        //todo remove
+        markers.forEach { it?.setIcon(BitmapDescriptorFactory.defaultMarker()) }
+    }
+
+    override fun setEmptyRecommendedFields() {
+        recommendedSpeed.text = ""
+        timeToGreen.text = ""
     }
 
     override fun removeAllMarks() {
@@ -166,6 +171,17 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
+    val infoWindowAdapter = object : GoogleMap.InfoWindowAdapter {
+        override fun getInfoContents(p0: Marker?): View? {
+
+            val popup = layoutInflater.inflate(R.layout.light_info_popup, null, false)
+            return popup
+        }
+
+        override fun getInfoWindow(p0: Marker?): View? {
+            return null
+        }
+    }
     override fun addMark(latLng: LatLng, openSettings: Boolean) {
         val markOptions = MarkerOptions()
                 .position(latLng)
@@ -175,7 +191,13 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         val marker = map?.addMarker(markOptions)
         markers.add(marker)
         map?.setOnMarkerClickListener { openLightPopup(it) }
-        map?.setOnInfoWindowClickListener { presenter.openLightSettings(it) }
+        map?.setOnInfoWindowClickListener {
+            Log.d(TAG, "choose light");
+            presenter.chooseNewLight(it.position)
+        }
+        map?.setOnInfoWindowLongClickListener { presenter.openLightSettings(it) }
+        map?.setInfoWindowAdapter(infoWindowAdapter)
+
 
         if (openSettings) {
             marker?.let { presenter.openLightSettings(marker) }

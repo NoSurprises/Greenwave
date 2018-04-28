@@ -10,6 +10,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
 import nick.greenwave.data.Storage
 import nick.greenwave.data.TrafficLight
 import nick.greenwave.data.dto.LightSettings
@@ -31,6 +32,8 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, Fireb
     private val movementHelper = CameraMovementLogicHelper()
     private var needUpdateNearestLight = false
     private var meanSpeedHelper = MeanSpeed()
+    private var subscription: Disposable? = null
+
 
     private val TAG = "GreenwavePresenter"
     override fun onMapReady(map: GoogleMap?) {
@@ -114,16 +117,20 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, Fireb
 
         setDistanceTo(light)
 
+        subscription?.dispose()
+        view.setEmptyRecommendedFields()
+
         if (!light.settings.isSet()) {
             return
         }
 
         val cycle = light.settings.greenCycle + light.settings.redCycle
         val diff = (Date().time - light.settings.startOfMeasurement) % cycle
-        var timeToGreen = abs(diff - cycle).toInt()
+        var timeToGreen = abs(diff - cycle).toInt() // todo equation
         if (DEBUG) Log.d(TAG, "(114, GreenwavePresenter.kt) light has settings, time to green $timeToGreen")
 
-        val subscription = Observable.timer(SECOND_IN_MILLIS, TimeUnit.MILLISECONDS)
+
+        subscription = Observable.timer(SECOND_IN_MILLIS, TimeUnit.MILLISECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
                 .repeat(timeToGreen.toLong())
                 .subscribe({
@@ -131,9 +138,9 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, Fireb
                     view.setTimeToGreen(--timeToGreen)
                     view.setRecommendedSpeed(calculateRecommendedSpeed(light.location.distanceTo(lastLoc), timeToGreen))
                 })
+
+
         // todo dispose like subscription.unsubscribe()
-
-
 
     }
 
@@ -169,6 +176,10 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, Fireb
         view.addMark(latLng, true)
     }
 
+    override fun chooseNewLight(position: LatLng) {
+        model.setNewClosestLight(TrafficLight(position.latitude, position.longitude))
+        model.requestSettingsForLight(model.createIdentifierFromLatlng(position), REQUEST_FIREBASE_CLOSEST_LIGHT_SETTINGS)
+    }
     override fun openLightSettings(marker: Marker) {
         if (DEBUG) Log.d(TAG, "(80, GreenwavePresenterr.kt) openLightSettings for ${marker.snippet}")
         // todo get data from model, maybe bound TrafficLight object in adapter of the card
