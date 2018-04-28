@@ -6,31 +6,28 @@ import android.util.Log
 import nick.greenwave.DEBUG
 import nick.greenwave.data.dto.LightSettings
 
-val TAG = "Storage"
-class Storage(val context: Context) {
+const val TAG = "Storage"
 
-    val preferences: SharedPreferences by lazy { context.getSharedPreferences("lights", Context.MODE_PRIVATE) }
+class Storage(private val context: Context) {
+
+    private val preferences: SharedPreferences
+            by lazy { context.getSharedPreferences("lights", Context.MODE_PRIVATE) }
 
     fun saveToPreferences(light: TrafficLight) {
         preferences.edit().putString(createKey(light), createValue(light)).apply()
     }
 
-    fun getFromPreferences(key: String): TrafficLight? {
-        if (!preferences.contains(key)) return null
-        return parseValue(key, preferences.getString(key, ""))
-    }
-
-
-
-    fun createKey(light: TrafficLight): String {
+    private fun createKey(light: TrafficLight): String {
         return "${light.lat}-${light.lng}".replace('.',';')
     }
 
     private fun createValue(light: TrafficLight): String {
-        return "${light.settings.greenCycle}-${light.settings.redCycle}-${light.settings.startOfMeasurement}"
+        return "${light.settings.greenCycle}-" +
+                "${light.settings.redCycle}-" +
+                "${light.settings.startOfMeasurement}"
     }
 
-    fun parseValue(key: String, value: String): TrafficLight {
+    private fun parseValue(key: String, value: String): TrafficLight {
         if (DEBUG) Log.d(TAG, "(29, Storage.kt) parseValue: $value key $key")
         val pair = parseKey(key)
         val result = TrafficLight(pair.first, pair.second)

@@ -19,12 +19,12 @@ import utils.SECOND_IN_MILLIS
 import java.util.*
 
 class SettingsActivity : AppCompatActivity() {
-    val TAG = "SettingsActivity"
+    private val TAG = "SettingsActivity"
 
-    var lightSettingsInfo: LightSettings? = null
-    val greenCycle: EditText by lazy { findViewById<EditText>(R.id.input_green_cycle) }
-    val redCycle: EditText by lazy { findViewById<EditText>(R.id.input_red_cycle) }
-    val currentLight: ToggleButton by lazy { findViewById<ToggleButton>(R.id.current_light) }
+    private var lightSettingsInfo: LightSettings? = null
+    private val greenCycle: EditText by lazy { findViewById<EditText>(R.id.input_green_cycle) }
+    private val redCycle: EditText by lazy { findViewById<EditText>(R.id.input_red_cycle) }
+    private val currentLight: ToggleButton by lazy { findViewById<ToggleButton>(R.id.current_light) }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,8 +42,10 @@ class SettingsActivity : AppCompatActivity() {
         lightSettingsInfo = extras.getParcelable(EXTRAS_LIGHT_INFO)
         lightSettingsInfo ?: return
 
-        setGreenCycle(lightSettingsInfo!!.greenCycle)
-        setRedCycle(lightSettingsInfo!!.redCycle)
+        if (lightSettingsInfo!!.isSet()) {
+            setGreenCycle(lightSettingsInfo!!.greenCycle)
+            setRedCycle(lightSettingsInfo!!.redCycle)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -78,7 +80,7 @@ class SettingsActivity : AppCompatActivity() {
                 it.startOfMeasurement = Date().time
             }
 
-            it.greenCycle = greenCycle.text.toString().toInt() // todo check input
+            it.greenCycle = greenCycle.text.toString().toInt()
             it.redCycle = redCycle.text.toString().toInt()
         }
 
@@ -92,11 +94,11 @@ class SettingsActivity : AppCompatActivity() {
                 .show()
     }
 
-    fun setGreenCycle(v: Int) {
+    private fun setGreenCycle(v: Int) {
         greenCycle.setText(v.toString())
     }
 
-    fun setRedCycle(v: Int) {
+    private fun setRedCycle(v: Int) {
         redCycle.setText(v.toString())
     }
 

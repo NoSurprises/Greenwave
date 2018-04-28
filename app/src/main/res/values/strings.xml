@@ -1,3 +1,19 @@
 <resources>
     <string name="app_name">Greenwave</string>
+    <string name="time_to_green">Time to green</string>
+    <string name="distance">Distance</string>
+    <string name="current_speed">Current speed:</string>
+    <string name="recommended_speed">Recommended speed:</string>
+    <string name="current">Current</string>
+    <string name="settings">Settings</string>
+    <string name="select">Select</string>
+    <string name="get_nearest">Get nearest</string>
+    <string name="green_cycle">Green Cycle</string>
+    <string name="red_cycle">Red Cycle</string>
+    <string name="e_g_25">e.g. 25</string>
+    <string name="e_g_36">e.g. 36</string>
+    <string name="now_started">Now started:</string>
+    <string name="togglebutton">ToggleButton</string>
+    <string name="green">green</string>
+    <string name="red">red</string>
 </resources>

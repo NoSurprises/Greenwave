@@ -6,7 +6,8 @@ import nick.greenwave.data.dto.LightSettings
 class TrafficLight(
         val lat: Double,
         val lng: Double,
-        var settings: LightSettings = LightSettings(identifier = "$lat-$lng".replace('.', ';'))) {
+        var settings: LightSettings =
+                LightSettings(identifier = "$lat-$lng".replace('.', ';'))) {
     override fun toString(): String = "($lat, $lng), settings=$settings"
     val location = Location("")
 

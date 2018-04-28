@@ -1,6 +1,5 @@
 package nick.greenwave
 
-import android.content.Context
 import android.location.Location
 import android.util.Log
 import com.google.android.gms.maps.model.LatLng
@@ -17,12 +16,11 @@ import java.util.*
 import kotlin.concurrent.timer
 
 
-class GreenwaveModel(val presenter: GreenwavePresenterApi) : GreenwaveModelApi {
+class GreenwaveModel(private val presenter: GreenwavePresenterApi) : GreenwaveModelApi {
 
-    var context: Context? = null
     private val TAG = "GreenwaveModel"
     private var nearestLights: List<TrafficLight>? = null
-    val osmService by lazy { OsmService.create() }
+    private val osmService by lazy { OsmService.create() }
     private var lastQueryLightLocation: Location? = null
     private var closestLight: TrafficLight? = null
 
@@ -37,7 +35,6 @@ class GreenwaveModel(val presenter: GreenwavePresenterApi) : GreenwaveModelApi {
     override fun requestSettingsForLight(identifier: String, request: Int) {
         val lightsRef = FirebaseDatabaseSingletone.getFirebaseInstance().getReference(LIGHTS_REFERENCE_FIREBASE)
         if (DEBUG) Log.d(TAG, "(35, GreenwaveModel.kt) requestSettingsForLight $lightsRef identifier=$identifier")
-        // todo check if key exists
 
         val noSettingsTimer = timer("no_settings", false, SECOND_IN_MILLIS, SECOND_IN_MILLIS,
                 {
@@ -93,12 +90,10 @@ class GreenwaveModel(val presenter: GreenwavePresenterApi) : GreenwaveModelApi {
         return result.toString()
     }
 
+    var requestMade = false
     override fun requestNearestLights(lat: Float, lng: Float) {
+        requestMade = true
         requestNearestLightsFromApi(lat, lng)
-    }
-
-    private fun requestNearestLightsFromSharedPreferences() {
-        // todo get nearest lights from Firebase
     }
 
     private fun requestNearestLightsFromApi(lat: Float, lng: Float) {
@@ -116,16 +111,13 @@ class GreenwaveModel(val presenter: GreenwavePresenterApi) : GreenwaveModelApi {
                 )
     }
 
-    private fun onReceiveNearestLights(result: OsmQueryResult, fromDatabase: Boolean = false) {
-        if (!fromDatabase) {
-            // TODO: 4/5/2018 save in database
-        }
+    private fun onReceiveNearestLights(result: OsmQueryResult) {
         nearestLights = null
         val lights = ArrayList<TrafficLight>()
         for (element in result.elements) {
             val identifier = "${element.lat}-${element.lon}".replace('.', ';')
             val light = TrafficLight(element.lat, element.lon, LightSettings(identifier = identifier))
-            if (DEBUG) Log.d(TAG, "(124, GreenwaveModel.kt) create TrafficLight ${light}")
+            if (DEBUG) Log.d(TAG, "(124, GreenwaveModel.kt) create TrafficLight $light")
             lights.add(light)
         }
         userLightsStorage.getAllLights().forEach({ lights.add(it) })
@@ -175,7 +167,7 @@ class GreenwaveModel(val presenter: GreenwavePresenterApi) : GreenwaveModelApi {
     }
 
     override fun detectNotableDistanceFromLastQueryLight(currentLocation: Location): Boolean {
-        lastQueryLightLocation ?: return true
+        lastQueryLightLocation ?: return !requestMade
         return lastQueryLightLocation?.distanceTo(currentLocation)!! > NOTABLE_DISTANCE
     }
 

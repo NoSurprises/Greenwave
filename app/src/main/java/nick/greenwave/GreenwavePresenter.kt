@@ -69,12 +69,7 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, Fireb
             moveCameraToLastLocation()
         }
 
-        // todo remove debug
-        view.setLat(lastLoc.latitude)
-        view.setLon(lastLoc.longitude)
-
         updateDistanceToClosestLight()
-        // todo updateSpeedToClosestLight
         detectTimeToUpdateClosestLight()
         updateClosestLightIfNeeded()
     }
@@ -171,7 +166,6 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, Fireb
     private val userLightsStorage by lazy { Storage(view.getApplicationContext()) }
 
     override fun addMapMark(latLng: LatLng) {
-        // todo save in model
         userLightsStorage.saveToPreferences(TrafficLight(latLng.latitude, latLng.longitude))
         view.addMark(latLng, true)
     }

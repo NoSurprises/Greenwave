@@ -20,7 +20,7 @@
             android:id="@+id/time_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Time to green" />
+            android:text="@string/time_to_green" />
 
         <TextView
             android:id="@+id/time"
@@ -47,7 +47,7 @@
             android:id="@+id/distance_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Distance" />
+            android:text="@string/distance" />
 
         <TextView
             android:id="@+id/distance_remaining"
@@ -87,7 +87,7 @@
             android:id="@+id/current_speed_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Current speed:"
+            android:text="@string/current_speed"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/map" />
 
@@ -122,7 +122,7 @@
             android:id="@+id/recommended_speed_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Recommended speed:" />
+            android:text="@string/recommended_speed" />
 
         <TextView
             android:id="@+id/recommended_speed"
@@ -162,7 +162,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:text="Green Cycle" />
+                android:text="@string/green_cycle" />
 
             <TextView
                 android:id="@+id/green_cycle"
@@ -176,7 +176,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:text="Red Cycle" />
+                android:text="@string/red_cycle" />
 
             <TextView
                 android:id="@+id/red_cycle"
@@ -190,7 +190,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:text="Current" />
+                android:text="@string/current" />
 
             <TextView
                 android:id="@+id/current"
@@ -211,79 +211,17 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
-                android:text="Settings" />
+                android:text="@string/settings" />
 
             <Button
                 android:id="@+id/select_current"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_toStartOf="@id/open_settings"
-                android:text="Select" />
+                android:text="@string/select" />
         </RelativeLayout>
     </LinearLayout>
 
-
-    <LinearLayout
-        android:id="@+id/lon_container"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/lat_container">
-
-        <TextView
-            android:id="@+id/lon_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="24dp"
-            android:layout_marginTop="8dp"
-            android:layout_weight="1"
-            android:text="Lon:" />
-
-        <TextView
-            android:id="@+id/lon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layout_marginStart="44dp"
-            android:layout_marginTop="8dp"
-            android:layout_weight="1"
-
-            tools:text="221.1213" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/lat_container"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:orientation="horizontal"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/light_settings_view">
-
-        <TextView
-            android:id="@+id/lat_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="24dp"
-            android:layout_marginTop="16dp"
-            android:layout_weight="1"
-            android:text="Lat:" />
-
-        <TextView
-            android:id="@+id/lat"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layout_marginStart="44dp"
-            android:layout_marginTop="12dp"
-            android:layout_weight="1"
-            tools:text="441.13" />
-
-    </LinearLayout>
 
     <Button
         android:id="@+id/request_nearest"
@@ -291,7 +229,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
-        android:text="Get nearest"
+        android:text="@string/get_nearest"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 

@@ -22,9 +22,6 @@ interface GreenwaveView {
 
     fun moveCameraTo(position: CameraPosition)
 
-    fun setLon(lon: Double)
-    fun setLat(lat: Double)
-
     fun getApplicationContext(): Context
     fun addMark(latLng: LatLng, openSettings: Boolean)
 

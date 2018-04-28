@@ -16,7 +16,10 @@ import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.google.android.gms.location.*
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapFragment
@@ -33,7 +36,7 @@ import utils.*
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-val DEBUG = true
+const val DEBUG = true
 
 private val SETTINGS_ACTIVITY_REQUEST_CODE = 23
 
@@ -44,8 +47,6 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
     private var locationCallback: LocationCallback? = null
     private val fusedLocationClient by lazy { LocationServices.getFusedLocationProviderClient(this) }
 
-    private val lonView by lazy { findViewById<TextView>(R.id.lon) }
-    private val latView by lazy { findViewById<TextView>(R.id.lat) }
     private val requestNearestLights by lazy { findViewById<Button>(R.id.request_nearest) }
     private val speedView by lazy { findViewById<TextView>(R.id.current_speed) }
     private val recommendedSpeed by lazy { findViewById<TextView>(R.id.recommended_speed) }
@@ -102,7 +103,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         }
         map?.setOnMarkerClickListener { showLightInfoView(it) }
         map?.setOnInfoWindowClickListener {
-            Log.d(TAG, "choose light");
+            Log.d(TAG, "choose light")
             presenter.chooseNewLight(it.position)
         }
         map?.setOnInfoWindowLongClickListener { presenter.openLightSettings(it) }
@@ -123,6 +124,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
     }
 
     override fun setActiveColorMarker(latLng: LatLng) {
+        if (DEBUG) Log.d(TAG, "(125, GreenwaveActivity.kt) setActiveColorMarker: markers $markers")
         if (markers.isEmpty()) {
             return
         }
@@ -140,6 +142,7 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
     }
 
     override fun resetMarkersColors() {
+        if (DEBUG) Log.d(TAG, "(142, GreenwaveActivity.kt) resetMarkersColors")
         markers.forEach { it?.setIcon(BitmapDescriptorFactory.defaultMarker()) }
     }
 
@@ -238,10 +241,12 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
                     val currentTime = Date().time
                     val diff = ((currentTime - light.startOfMeasurement) / 1000) % (light.redCycle + light.greenCycle)
                     if (diff < light.greenCycle) {
-                        current.text = "Green ${light.greenCycle - diff}"
+                        val greenText = "Green ${light.greenCycle - diff}"
+                        current.text = greenText
                         current.setTextColor(Color.GREEN)
                     } else {
-                        current.text = "Red ${light.redCycle - (diff - light.greenCycle)}"
+                        val redText = "Red ${light.redCycle - (diff - light.greenCycle)}"
+                        current.text = redText
                         current.setTextColor(Color.RED)
                     }
                 })
@@ -259,16 +264,6 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         hideLightInfoView()
         presenter.requestSettingsFor(marker.position)
         return true
-    }
-
-    override fun setLon(lon: Double) {
-        lonView.text = lon.toString()
-        if (DEBUG) Log.d(TAG, "set new longtitude: $lon to $lonView")
-    }
-
-    override fun setLat(lat: Double) {
-        latView.text = lat.toString()
-        if (DEBUG) Log.d(TAG, "set new latitude: $lat to $latView")
     }
 
     override fun onResume() {
@@ -306,25 +301,6 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         }
     }
 
-    private fun registerActivityRecognition() {
-        val transitions = ArrayList<ActivityTransition>()
-
-        transitions.add(
-                ActivityTransition.Builder()
-                        .setActivityType(DetectedActivity.WALKING)
-                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                        .build())
-
-        transitions.add(
-                ActivityTransition.Builder()
-                        .setActivityType(DetectedActivity.WALKING)
-                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                        .build())
-
-        val request = ActivityTransitionRequest(transitions)
-//        val pendingIntent = PendingIntent.getForegroundService() // todo register a foreground service (or receiver), that will update the textview
-//        val task =  ActivityRecognition.getClient(this).requestActivityTransitionUpdates(request,)
-    }
 
     private fun createLocationCallback() {
         locationCallback = object : LocationCallback() {
