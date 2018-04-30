@@ -5,6 +5,23 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <ImageView
+        android:id="@+id/bg"
+        android:layout_width="match_parent"
+        android:layout_height="386dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:alpha="0.04"
+        android:scaleType="center"
+        android:src="@drawable/bg"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.972" />
 
     <LinearLayout
         android:id="@+id/time_container"
@@ -20,6 +37,7 @@
             android:id="@+id/time_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/textDarkPrimary"
             android:text="@string/time_to_green" />
 
         <TextView
@@ -27,9 +45,17 @@
             android:layout_width="wrap_content"
             android:layout_height="19dp"
             android:layout_marginEnd="8dp"
+            android:textColor="@color/textDarkPrimary"
             android:layout_marginStart="8dp"
             tools:layout_editor_absoluteY="311dp"
             tools:text="5.3 " />
+
+        <TextView
+            android:id="@+id/time_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="S"
+            android:textColor="@color/textDarkPrimary" />
 
     </LinearLayout>
 
@@ -47,6 +73,7 @@
             android:id="@+id/distance_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/textDarkPrimary"
             android:text="@string/distance" />
 
         <TextView
@@ -56,7 +83,15 @@
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
             tools:layout_editor_absoluteY="311dp"
+            android:textColor="@color/textDarkPrimary"
             tools:text="5.3 " />
+
+        <TextView
+            android:id="@+id/distance_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="M"
+            android:textColor="@color/textDarkPrimary" />
 
     </LinearLayout>
 
@@ -76,7 +111,7 @@
         android:id="@+id/speed_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
         android:orientation="horizontal"
         app:layout_constraintStart_toStartOf="parent"
@@ -87,6 +122,7 @@
             android:id="@+id/current_speed_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/textDarkPrimary"
             android:text="@string/current_speed"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/map" />
@@ -95,16 +131,18 @@
             android:id="@+id/current_speed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="68dp"
-            tools:text="4.5 km/h" />
+            android:layout_marginStart="16dp"
+            android:textColor="@color/textDarkPrimary"
+            tools:text="4.5" />
 
         <TextView
-            android:id="@+id/current_speed_history"
+            android:id="@+id/current_speed_units"
             android:layout_width="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/km_h"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            android:layout_marginStart="8dp"
-            tools:text="4.5 km/h" />
+            android:textColor="@color/textDarkPrimary" />
 
     </LinearLayout>
 
@@ -122,6 +160,9 @@
             android:id="@+id/recommended_speed_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            style="@style/Base.TextAppearance.AppCompat.Medium"
+            android:textColor="@color/textDarkPrimary"
+            android:textSize="16sp"
             android:text="@string/recommended_speed" />
 
         <TextView
@@ -130,8 +171,21 @@
             android:layout_height="19dp"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
+            style="@style/Base.TextAppearance.AppCompat.Medium"
+            android:textColor="@color/textDarkPrimary"
+
+            android:textSize="16sp"
             tools:layout_editor_absoluteY="311dp"
-            tools:text="5.3 km/h" />
+            tools:text="5.3" />
+
+        <TextView
+            android:id="@+id/recommended_speed_units"
+            style="@style/Base.TextAppearance.AppCompat.Medium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/km_h"
+            android:textColor="@color/textDarkPrimary"
+            android:textSize="16sp" />
 
     </LinearLayout>
 
@@ -141,7 +195,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
         android:orientation="vertical"
         android:visibility="gone"
@@ -210,6 +264,7 @@
                 android:id="@+id/open_settings"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                style="@style/Widget.AppCompat.Button.Borderless"
                 android:layout_alignParentEnd="true"
                 android:text="@string/settings" />
 
@@ -217,6 +272,7 @@
                 android:id="@+id/select_current"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                style="@style/Widget.AppCompat.Button.Borderless"
                 android:layout_toStartOf="@id/open_settings"
                 android:text="@string/select" />
         </RelativeLayout>
@@ -225,12 +281,25 @@
 
     <Button
         android:id="@+id/request_nearest"
+        style="@style/Widget.AppCompat.Button.Borderless"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
-        android:text="@string/get_nearest"
+        android:text="find all"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/get_closest"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:text="find closest"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/request_nearest" />
+
 
 </android.support.constraint.ConstraintLayout>

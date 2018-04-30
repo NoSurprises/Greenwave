@@ -16,4 +16,5 @@
     <string name="togglebutton">ToggleButton</string>
     <string name="green">green</string>
     <string name="red">red</string>
+    <string name="km_h">KM/H</string>
 </resources>

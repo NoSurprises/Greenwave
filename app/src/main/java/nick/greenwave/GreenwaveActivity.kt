@@ -48,9 +48,14 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
     private val fusedLocationClient by lazy { LocationServices.getFusedLocationProviderClient(this) }
 
     private val requestNearestLights by lazy { findViewById<Button>(R.id.request_nearest) }
+    private val requestClosestLight by lazy { findViewById<Button>(R.id.get_closest) }
     private val speedView by lazy { findViewById<TextView>(R.id.current_speed) }
     private val recommendedSpeed by lazy { findViewById<TextView>(R.id.recommended_speed) }
+    private val recommendedLabel by lazy { findViewById<TextView>(R.id.recommended_speed_label) }
+    private val recommendedUnits by lazy { findViewById<TextView>(R.id.recommended_speed_units) }
     private val remainingDistance by lazy { findViewById<TextView>(R.id.distance_remaining) }
+    private val remainingDistanceLabel by lazy { findViewById<TextView>(R.id.distance_label) }
+    private val remainingDistanceUnits by lazy { findViewById<TextView>(R.id.distance_units) }
 
     private val lightInfoView by lazy { findViewById<LinearLayout>(R.id.light_settings_view) }
     private val redCycle by lazy { lightInfoView.findViewById<TextView>(R.id.red_cycle) }
@@ -60,10 +65,12 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
     private val settings by lazy { lightInfoView.findViewById<Button>(R.id.open_settings) }
     private var lastMarkerClicked: Marker? = null
 
-
+    private var followUser = true
     private var stopSelectedMarkerTimer = false
 
     private val timeToGreen by lazy { findViewById<TextView>(R.id.time) }
+    private val timeToGreenLabel by lazy { findViewById<TextView>(R.id.time_label) }
+    private val timeToGreenUnits by lazy { findViewById<TextView>(R.id.time_units) }
     private var map: GoogleMap? = null
     private var mCameraPosition: CameraPosition? = null
     private val markers = ArrayList<Marker?>()
@@ -81,6 +88,9 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
                 .setFastestInterval(SECOND_IN_MILLIS)
     }
 
+    override fun canMoveCamera(): Boolean {
+        return followUser
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.greenwave)
@@ -89,8 +99,10 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         requestNearestLights.setOnClickListener {
             getDeviceLocation()?.addOnSuccessListener { presenter.requestNearestLights(it) }
         }
+        requestClosestLight.setOnClickListener({ presenter.forceChooseNewClosestLight() })
         val mapFragment = fragmentManager.findFragmentById(R.id.map) as MapFragment
         mapFragment.getMapAsync(this)
+        hideSuggestions()
     }
 
     override fun onMapReady(map: GoogleMap?) {
@@ -108,7 +120,10 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         }
         map?.setOnInfoWindowLongClickListener { presenter.openLightSettings(it) }
 
-        map?.setOnMapClickListener { hideLightInfoView() }
+        map?.setOnMapClickListener {
+            hideLightInfoView()
+            followUser = false // ux feature
+        }
 
         presenter.onMapReady(map)
         getDeviceLocation()?.addOnSuccessListener { presenter.requestNearestLights(it) }
@@ -181,12 +196,14 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         map?.animateCamera(CameraUpdateFactory.newCameraPosition(position))
     }
 
+
     @SuppressLint("MissingPermission")
     override fun enableMyLocationButton() {
         map?.isMyLocationEnabled = true
 
         map?.setOnMyLocationButtonClickListener {
             mapToDeviceLocation()
+            followUser = true
             true
         }
     }
@@ -256,6 +273,36 @@ class GreenwaveActivity : AppCompatActivity(), OnMapReadyCallback, GreenwaveView
         stopSelectedMarkerTimer = true
         selectedMarkerCurrentLight?.dispose()
         lightInfoView.visibility = View.GONE
+    }
+
+    override fun hideSuggestions() {
+        remainingDistance.visibility = View.GONE
+        remainingDistanceLabel.visibility = View.GONE
+        remainingDistanceUnits.visibility = View.GONE
+
+        timeToGreen.visibility = View.GONE
+        timeToGreenLabel.visibility = View.GONE
+        timeToGreenUnits.visibility = View.GONE
+
+        recommendedSpeed.visibility = View.GONE
+        recommendedLabel.visibility = View.GONE
+        recommendedUnits.visibility = View.GONE
+
+    }
+
+    override fun showSuggestions() {
+        remainingDistance.visibility = View.VISIBLE
+        remainingDistanceLabel.visibility = View.VISIBLE
+        remainingDistanceUnits.visibility = View.VISIBLE
+
+        timeToGreen.visibility = View.VISIBLE
+        timeToGreenLabel.visibility = View.VISIBLE
+        timeToGreenUnits.visibility = View.VISIBLE
+
+        recommendedSpeed.visibility = View.VISIBLE
+        recommendedLabel.visibility = View.VISIBLE
+        recommendedUnits.visibility = View.VISIBLE
+
     }
 
     private fun showLightInfoView(marker: Marker): Boolean {

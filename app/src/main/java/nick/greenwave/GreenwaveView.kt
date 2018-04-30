@@ -35,5 +35,8 @@ interface GreenwaveView {
     fun setTimeToGreen(time: Int)
     fun setEmptyRecommendedFields()
     fun onReceiveSettings(light: LightSettings)
+    fun canMoveCamera(): Boolean
+    fun hideSuggestions()
+    fun showSuggestions()
 
 }

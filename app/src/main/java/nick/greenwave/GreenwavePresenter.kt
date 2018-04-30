@@ -65,7 +65,7 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, Fireb
 
         onSpeedChanged(lastLoc.speed.toDouble())
 
-        if (movementHelper.canMoveCamera()) {
+        if (view.canMoveCamera()) {
             moveCameraToLastLocation()
         }
 
@@ -130,6 +130,7 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, Fireb
         if (DEBUG) Log.d(TAG, "(114, GreenwavePresenter.kt) light has settings, time to green $timeToGreen")
 
 
+        view.showSuggestions()
         subscription = Observable.timer(SECOND_IN_MILLIS, TimeUnit.MILLISECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
                 .repeat(timeToGreen.toLong())
@@ -137,6 +138,9 @@ class GreenwavePresenter(val view: GreenwaveView) : GreenwavePresenterApi, Fireb
                     Log.v(TAG, "time to green ${timeToGreen - 1}")
                     view.setTimeToGreen(--timeToGreen)
                     view.setRecommendedSpeed(calculateRecommendedSpeed(light.location.distanceTo(lastLoc), timeToGreen))
+                    if (timeToGreen == 1) {
+                        view.hideSuggestions()
+                    }
                 })
 
 
